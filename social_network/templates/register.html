@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<body>
+<div class="container">
+    <form method="post">
+        {% csrf_token %}
+        <h2>Register</h2>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+        <button type="submit">Register</button>
+        <a href="{% url 'login' %}">Login</a>
+
+        <div class="messages">
+            {% for message in messages %}
+            <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+    </form>
+</div>
+</body>
+{% endblock %}
