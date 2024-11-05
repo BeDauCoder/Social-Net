@@ -1,29 +1,48 @@
 {% extends 'base.html' %}
-
 {% block content %}
-  <h2>Edit Profile</h2>
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    <div>
-      <label for="id_avatar">Avatar:</label>
-      {{ profile_form.avatar }}
-    </div>
-    <div>
-      <label for="id_first_name">First Name:</label>
-      {{ user_form.first_name }}
-    </div>
-    <div>
-      <label for="id_last_name">Last Name:</label>
-      {{ user_form.last_name }}
-    </div>
-    <div>
-      <label for="id_date_of_birth">Date of Birth:</label>
-      {{ profile_form.date_of_birth }}
-    </div>
-    <div>
-      <label for="id_hometown">Hometown:</label>
-      {{ profile_form.hometown }}
-    </div>
-    <button type="submit">Save Changes</button>
-  </form>
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Chỉnh sửa hồ sơ</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3 row">
+            <label for="id_card_image" class="col-sm-2 col-form-label">Ảnh bìa:</label>
+            <div class="col-sm-10">
+                {{ profile_form.card_image }}
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label for="id_avatar" class="col-sm-2 col-form-label">Ảnh đại diện:</label>
+            <div class="col-sm-10">
+                {{ profile_form.avatar }}
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label for="id_first_name" class="col-sm-2 col-form-label">Tên:</label>
+            <div class="col-sm-10">
+                {{ user_form.first_name }}
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label for="id_last_name" class="col-sm-2 col-form-label">Họ:</label>
+            <div class="col-sm-10">
+                {{ user_form.last_name }}
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label for="id_date_of_birth" class="col-sm-2 col-form-label">Ngày sinh:</label>
+            <div class="col-sm-10">
+                {{ profile_form.date_of_birth }}
+            </div>
+        </div>
+        <div class="mb-3 row">
+            <label for="id_hometown" class="col-sm-2 col-form-label">Quê quán:</label>
+            <div class="col-sm-10">
+                {{ profile_form.hometown }}
+            </div>
+        </div>
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+        </div>
+    </form>
+</div>
 {% endblock %}

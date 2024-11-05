@@ -1,14 +1,23 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.models import User
-from django.shortcuts import render, redirect,get_object_or_404
 from .forms import PostForm,CommentForm,UserForm,UserProfileForm
 from .models import Post, Like, Comment,Friend
 from django.db import models
 from django.contrib.auth.decorators import login_required
 from .models import UserProfile
-from django.http import JsonResponse
-
+from django.shortcuts import redirect, get_object_or_404, render
+from django.views.decorators.http import require_POST
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from .serializers import CommentSerializer,ReplySerializer
+from .permissions import IsOwnerOrReadOnly,IsAuthenticated
+from rest_framework import viewsets
+from django.urls import reverse_lazy
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from .models import Page
 
 
 def register(request):
@@ -53,14 +62,17 @@ def home(request):
     )
     likes = Like.objects.filter(user=user)
     comments = Comment.objects.filter(user=user)
+    friends = Friend.objects.filter(user=user, status='accepted')  # Danh sách bạn bè
 
     context = {
         'user': user,
         'posts': posts,
         'likes': likes,
         'comments': comments,
+        'friends': friends,  # Truyền danh sách bạn bè vào context
     }
     return render(request, 'home.html', context)
+
 
 
 def add_post(request):
@@ -202,4 +214,183 @@ def unfriend(request, user_id, friend_id):
     return redirect('list_friends', user_id=user_id)
 
 
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [IsOwnerOrReadOnly]
 
+    @action(detail=True, methods=['post'])
+    def like(self, request, pk=None):
+        comment = self.get_object()
+        user = request.user
+        if user in comment.likes.all():
+            comment.likes.remove(user)
+            return Response({'status': 'unliked'}, status=status.HTTP_200_OK)
+        else:
+            comment.likes.add(user)
+            return Response({'status': 'liked'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def reply(self, request, pk=None):
+        comment = self.get_object()  # Bình luận mà bạn sẽ reply
+        serializer = ReplySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user, post=comment.post, parent=comment)  # Gán parent và post
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated])
+    def delete_comment(self, request, pk=None):
+        comment = self.get_object()
+        if comment.user == request.user:  # Kiểm tra quyền sở hữu
+            comment.delete()
+            return Response({'status': 'deleted'}, status=status.HTTP_204_NO_CONTENT)
+        return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    @action(detail=True, methods=['put'], permission_classes=[IsAuthenticated])
+    def update_comment(self, request, pk=None):
+        comment = self.get_object()  # Lấy bình luận dựa trên `pk`
+
+        # Kiểm tra quyền sở hữu
+        if comment.user != request.user:
+            return Response({'error': 'Bạn không có quyền sửa bình luận này'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Thực hiện cập nhật bình luận
+        serializer = self.get_serializer(comment, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+def post_detail(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    comments = post.comments.all()  # Lấy tất cả các bình luận của bài viết này
+    form = CommentForm()  # Tạo form cho bình luận
+
+    return render(request, 'post_detail.html', {
+        'post': post,
+        'comments': comments,
+        'form': form,  # Truyền form vào context
+    })
+
+
+
+@require_POST  # Chỉ cho phép yêu cầu POST để tránh lỗi phương thức không hợp lệ
+def add_comment(request, pk):
+    # Lấy bài viết theo pk hoặc trả về 404 nếu không tìm thấy
+    post = get_object_or_404(Post, pk=pk)
+    form = CommentForm(request.POST)
+
+    if form.is_valid():
+        # Tạo đối tượng comment nhưng chưa lưu vào DB
+        comment = form.save(commit=False)
+        comment.post = post  # Gán bài viết cho bình luận
+        comment.user = request.user  # Gán người dùng hiện tại cho bình luận
+        comment.save()  # Lưu bình luận vào DB
+
+    # Chuyển hướng về trang chi tiết của bài viết
+    return redirect('post_detail', pk=post.pk)
+
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def chat_view(request, receiver_id):
+    receiver = get_object_or_404(User, id=receiver_id)
+    user = request.user
+
+    # Lấy danh sách bạn bè của người dùng hiện tại
+    friends = Friend.objects.filter(user=user, status='accepted')
+
+    context = {
+        'receiver': receiver,  # Người nhận cụ thể mà bạn đang trò chuyện
+        'friends': friends      # Danh sách bạn bè
+    }
+    return render(request, 'chat.html', context)
+
+
+
+
+class PageListView(LoginRequiredMixin, ListView):
+    model = Page
+    template_name = 'page_manager/page_list.html'
+    context_object_name = 'pages'
+
+class PageCreateView(LoginRequiredMixin, CreateView):
+    model = Page
+    template_name = 'page_manager/page_form.html'
+    fields = ['title', 'content_html', 'cover_image', 'avatar_image']
+    success_url = reverse_lazy('page_list')
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+
+class PageUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Page
+    template_name = 'page_manager/page_form.html'
+    fields = ['title', 'content_html', 'cover_image', 'avatar_image']
+    success_url = reverse_lazy('page_list')
+
+    def test_func(self):
+        page = self.get_object()
+        return self.request.user == page.author
+
+class PageDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Page
+    template_name = 'page_manager/page_confirm_delete.html'
+    success_url = reverse_lazy('page_list')
+
+    def test_func(self):
+        page = self.get_object()
+        return self.request.user == page.author
+
+
+def page_list_user(request):
+    pages = Page.objects.all()  # Lấy tất cả các trang
+    return render(request, 'page_list_user.html', {'pages': pages})
+
+def page_detail_user(request, pk):
+    page = get_object_or_404(Page, pk=pk)  # Lấy trang theo khóa chính (primary key)
+    return render(request, 'page_detail.html', {'page': page})
+
+
+# Danh sách bài viết của người dùng trên trang cá nhân
+class UserPostListView(LoginRequiredMixin, ListView):
+    model = Post
+    template_name = 'post_manager/user_post_list.html'
+    context_object_name = 'posts'
+
+    def get_queryset(self):
+        return Post.objects.filter(author=self.request.user).order_by('-created_at')
+
+# Tạo bài viết mới
+class PostCreateView(LoginRequiredMixin, CreateView):
+    model = Post
+    form_class = PostForm
+    template_name = 'post_manager/post_form.html'
+    success_url = reverse_lazy('user_post_list')
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+
+# Sửa bài viết
+class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Post
+    form_class = PostForm
+    template_name = 'post_manager/post_form.html'
+    success_url = reverse_lazy('user_post_list')
+
+    def test_func(self):
+        post = self.get_object()
+        return self.request.user == post.author
+
+# Xóa bài viết
+class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Post
+    template_name = 'post_manager/post_confirm_delete.html'
+    success_url = reverse_lazy('user_post_list')
+
+    def test_func(self):
+        post = self.get_object()
+        return self.request.user == post.author

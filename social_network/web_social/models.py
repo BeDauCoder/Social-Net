@@ -7,6 +7,7 @@ from django.dispatch import receiver
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    card_image = models.ImageField(upload_to='avatars/', null=True, blank=True)
     date_of_birth = models.DateField(null=True, blank=True)
     hometown = models.CharField(max_length=100, null=True, blank=True)
 
@@ -61,14 +62,28 @@ class Like(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
+
 class Comment(models.Model):
     post = models.ForeignKey('Post', related_name='comments', on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
     created_at = models.DateTimeField(default=timezone.now)
 
+    # Trường lưu những người dùng đã like
+    likes = models.ManyToManyField(User, related_name='liked_comments', blank=True)
+
+    # Trường cha để xác định comment gốc
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='replies', on_delete=models.CASCADE)
+
     def __str__(self):
-        return self.post
+        return self.text[:20]
+
+    def is_reply(self):
+        return self.parent is not None
+
+    def total_likes_comment(self):
+        return self.likes.count()
+
 
 class Share(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
@@ -112,4 +127,16 @@ class Block(models.Model):
 
     def __str__(self):
         return f'{self.user.username} has blocked {self.blocked_user.username}'
+
+class Page(models.Model):
+    title = models.CharField(max_length=255)
+    content_html = models.TextField()
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pages')
+    cover_image = models.ImageField(upload_to='pages/covers/', null=True, blank=True)
+    avatar_image = models.ImageField(upload_to='pages/avatars/', null=True, blank=True)
+    views = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
 

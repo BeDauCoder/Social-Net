@@ -1,0 +1,37 @@
+<!-- templates/page_detail.html -->
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-body">
+            <!-- Hiển thị Tiêu đề -->
+            <h2 class="card-title">{{ page.title }}</h2>
+
+            <!-- Hiển thị Tác giả -->
+            <p class="card-text">Created by: <strong>{{ page.author.username }}</strong></p>
+
+            <!-- Hiển thị Ảnh đại diện nếu có -->
+            {% if page.avatar_image %}
+                <img src="{{ page.avatar_image.url }}" alt="Avatar" class="img-thumbnail rounded-circle" style="width: 50px; height: 50px;">
+            {% endif %}
+
+            <!-- Hiển thị Ảnh bìa nếu có -->
+            {% if page.cover_image %}
+                <div class="mt-3">
+                    <img src="{{ page.cover_image.url }}" alt="Cover Image" class="img-fluid" style="max-width: 100%; height: auto;">
+                </div>
+            {% endif %}
+
+            <!-- Hiển thị Nội dung HTML -->
+            <div class="mt-4">{{ page.content_html|safe }}</div>
+
+            <!-- Hiển thị Lượt xem và Ngày tạo -->
+            <div class="mt-3">
+                <small class="text-muted">Views: {{ page.views }}</small>
+                <small class="text-muted float-end">Created at: {{ page.created_at }}</small>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

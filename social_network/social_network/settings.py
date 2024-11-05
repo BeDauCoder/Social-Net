@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     "allauth.account",
     "web_social",
     "django_summernote",
-
+    "rest_framework",
+    "channels"
 ]
 
 MIDDLEWARE = [
@@ -140,4 +141,17 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE
 SUMMERNOTE_CONFIG = {
     'attachment_upload_to': 'uploads/',  # Đường dẫn trong MEDIA_ROOT
     'attachment_filesize_limit': 10485760,
+}
+
+# Thiết lập ASGI cho Django Channels
+ASGI_APPLICATION = 'social_network.asgi.application'
+
+# Kết nối Redis để lưu trữ kênh WebSocket
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],  # Đảm bảo Redis đang chạy ở cổng 6379
+        },
+    },
 }

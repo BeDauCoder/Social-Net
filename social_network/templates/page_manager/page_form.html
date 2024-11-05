@@ -1,0 +1,52 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>{% if form.instance.pk %}Sửa{% else %}Tạo{% endif %} Page</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa; /* Màu nền nhạt */
+        }
+        h1 {
+            color: #343a40; /* Màu chữ xám đậm */
+        }
+        form {
+            background-color: #ffffff; /* Màu nền trắng */
+            border: 2px solid #007bff; /* Khung viền màu xanh */
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1); /* Tạo đổ bóng */
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h1 class="mb-4 text-center">{% if form.instance.pk %}Sửa{% else %}Tạo{% endif %} Page</h1>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-primary mt-3 d-block mx-auto">{% if form.instance.pk %}Lưu{% else %}Tạo mới{% endif %}</button>
+                </form>
+                <a href="{% url 'page_list' %}" class="btn btn-secondary mt-3 d-block mx-auto">Quay lại danh sách</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h1>Bài viết của bạn</h1>
+    <a href="{% url 'post_create' %}" class="btn btn-primary mb-3">Tạo bài viết mới</a>
+    <ul class="list-group">
+        {% for post in posts %}
+            <li class="list-group-item">
+                <p><strong>{{ post.content }}</strong></p>
+                <p>Quyền riêng tư: {{ post.get_privacy_display }}</p>
+                <p>Thích: {{ post.total_likes }}</p>
+                <a href="{% url 'post_edit' post.pk %}" class="btn btn-sm btn-info">Sửa</a>
+                <a href="{% url 'post_delete' post.pk %}" class="btn btn-sm btn-danger">Xóa</a>
+            </li>
+        {% empty %}
+            <li class="list-group-item">Bạn chưa có bài viết nào.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+<!-- templates/page_list.html -->
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2>All Pages</h2>
+    <ul class="list-group">
+        {% for page in pages %}
+            <li class="list-group-item">
+                <a href="{% url 'page_detail' page.pk %}">{{ page.title|safe }}</a>
+                <small class="text-muted">Created at: {{ page.created_at }}</small>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

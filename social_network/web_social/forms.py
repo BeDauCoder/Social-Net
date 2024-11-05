@@ -21,13 +21,16 @@ class PostForm(forms.ModelForm):
 class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
-        fields = ['text']
+        fields = ['text']  # Trường duy nhất cần cho bình luận là text
+        widgets = {
+            'text': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
 
 
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ['avatar', 'date_of_birth', 'hometown']
+        fields = ['card_image','avatar', 'date_of_birth', 'hometown']
         widgets = {
             'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
         }

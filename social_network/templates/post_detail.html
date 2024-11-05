@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2>{{ post.author.username }}'s Post</h2>
+    <p>{{ post.content|safe }}</p>
+    <small class="text-muted">Created at: {{ post.created_at }}</small>
+    <hr>
+
+    <!-- Form để thêm bình luận mới -->
+    <form method="post" action="{% url 'add_comment' post.pk %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary mt-2">Comment</button>
+    </form>
+    <!-- Like và Reply bình luận -->
+    <ul class="list-group">
+        {% for comment in comments %}
+        <li class="list-group-item" style="border: 2px solid #007bff; border-radius: 10px; margin-bottom: 10px;">
+            <strong>{{ comment.user.username }}</strong><br>
+            {{ comment.text }}<br>
+            <small class="text-muted">{{ comment.created_at }}</small>
+            <small>Likes: {{ comment.total_likes_comment }}</small>
+
+            <button class="btn btn-outline-primary btn-sm like-btn" data-id="{{ comment.id }}">Like</button>
+            <button class="btn btn-outline-secondary btn-sm reply-btn" data-id="{{ comment.id }}">Reply</button>
+
+            {% if comment.user == request.user %}
+            <!-- Nút Delete chỉ hiển thị nếu người dùng là tác giả của bình luận -->
+            <button class="btn btn-outline-danger btn-sm delete-btn" data-id="{{ comment.id }}">
+                Delete
+            </button>
+            {% endif %}
+
+            {% if comment.user == request.user %}
+            <!-- Nút Edit chỉ hiển thị nếu người dùng là tác giả của bình luận -->
+            <button class="btn btn-outline-warning btn-sm edit-btn" data-id="{{ comment.id }}">
+                Edit
+            </button>
+            {% endif %}
+
+            <!-- Hiển thị các reply -->
+            <div class="ml-4 mt-3">
+                {% for reply in comment.replies.all %}
+                <div class="media mb-3" style="border: 1px solid #dcdcdc; border-radius: 10px; padding: 10px;">
+                    <strong>{{ reply.user.username }}</strong><br>
+                    {{ reply.text }}
+                    <small class="text-muted d-block">Commented at: {{ reply.created_at }}</small>
+                </div>
+
+                {% endfor %}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <!-- JavaScript cho Like và Reply -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Like comment
+            $('.like-btn').click(function () {
+                var commentId = $(this).data('id');
+                $.ajax({
+                    url: `/comments/${commentId}/like/`,
+                    type: 'POST',
+                    headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                    success: function (response) {
+                        alert(response.status); // Hiển thị trạng thái "liked" hoặc "unliked"
+                        location.reload();
+                    }
+                });
+            });
+
+            // Reply to comment
+            $('.reply-btn').click(function () {
+                var commentId = $(this).data('id');
+                var replyText = prompt("Enter your reply:");
+                if (replyText) {
+                    $.ajax({
+                        url: `/comments/${commentId}/reply/`,
+                        type: 'POST',
+                        data: JSON.stringify({'text': replyText}),
+                        contentType: 'application/json',
+                        headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                        success: function (response) {
+                            alert("Reply added");
+                            location.reload();
+                        },
+                        error: function () {
+                            alert("Error adding reply");
+                        }
+                    });
+                }
+            });
+
+            // Delete comment
+            $('.delete-btn').click(function () {
+                var commentId = $(this).data('id');
+                if (confirm("Are you sure you want to delete this comment?")) {
+                    $.ajax({
+                        url: `/comments/${commentId}/delete_comment/`,
+                        type: 'DELETE',
+                        headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                        success: function (response) {
+                            alert("Comment deleted");
+                            location.reload();
+                        },
+                        error: function () {
+                            alert("Error deleting comment");
+                        }
+                    });
+                }
+            });
+
+            // Xử lý nút sửa bình luận
+            $('.edit-btn').click(function () {
+                var commentId = $(this).data('id');
+                var newText = prompt("Edit your comment:");
+
+                if (newText) {
+                    $.ajax({
+                        url: `/comments/${commentId}/update_comment/`,
+                        type: 'PUT',
+                        data: JSON.stringify({'text': newText}),
+                        contentType: 'application/json',
+                        headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                        success: function (response) {
+                            alert("Comment updated");
+                            location.reload();
+                        },
+                        error: function (xhr) {
+                            alert("Error updating comment: " + xhr.responseText);
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</div>
+{% endblock %}
