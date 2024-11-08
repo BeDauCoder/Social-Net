@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container scrollable-container">
+    <div class="row">
+        <!-- Ảnh bìa -->
+        <div class="col-12">
+            {% if user_profile.card_image %}
+                <img src="{{ user_profile.card_image.url }}" alt="Cover Image" class="img-fluid w-100" style="height: 300px; object-fit: cover;">
+            {% endif %}
+        </div>
+
+        <!-- Ảnh đại diện và thông tin người dùng -->
+        <div class="col-12 d-flex justify-content-center mt-3">
+            <div class="text-center">
+                {% if user_profile.avatar %}
+                    <img src="{{ user_profile.avatar.url }}" alt="Avatar" class="rounded-circle" style="width: 150px; height: 150px; object-fit: cover;">
+                {% endif %}
+                <h2 class="mt-3">{{ user.first_name }} {{ user.last_name }}</h2>
+                <a href="{% url 'edit_profile' %}" class="btn btn-primary mt-2">Edit Profile</a>
+            </div>
+        </div>
+
+        <!-- Thông tin cá nhân -->
+        <div class="col-12 col-md-6 offset-md-3 mt-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Thông tin cá nhân</h4>
+                    <p><strong>Email:</strong> {{ user.email }}</p>
+                    <p><strong>Date of Birth:</strong> {{ user_profile.date_of_birth }}</p>
+                    <p><strong>Hometown:</strong> {{ user_profile.hometown }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

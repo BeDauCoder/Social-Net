@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messenger Chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body, html {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+        }
+        .container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        /* Sidebar (Friend List) */
+        .friend-list {
+            width: 25%;
+            background-color: #3b5998;
+            color: white;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        .friend-item {
+            padding: 10px;
+            cursor: pointer;
+            color: white;
+            display: flex;
+            align-items: center;
+            border-radius: 8px;
+        }
+        .friend-item:hover {
+            background-color: #4a69bd;
+        }
+        /* Chat Area */
+        .chat-area {
+            width: 75%;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .chat-log {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .chat-message {
+            margin: 10px 0;
+        }
+        .chat-message .sender {
+            font-weight: bold;
+            color: #333;
+        }
+        .chat-footer {
+            display: flex;
+            align-items: center;
+        }
+        .chat-footer input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Danh sách bạn bè -->
+    <div class="friend-list">
+        <h4>Friends</h4>
+        <ul>
+            {% for friend in friends %}
+            <li class="friend-item" onclick="window.location.href='{% url 'chat_view' friend.friend.id %}'">
+                <i class="fas fa-user-circle me-2"></i> {{ friend.friend.username }}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Khu vực chat -->
+    <div class="chat-area">
+        <div class="chat-log" id="chat-log">
+            <!-- Tin nhắn sẽ được thêm vào đây qua JavaScript -->
+        </div>
+
+        <div class="chat-footer">
+            <input type="text" id="chat-message-input" placeholder="Type a message">
+            <button id="send-button" class="btn btn-primary">Send</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let chatSocket;
+
+    function connectWebSocket() {
+       const receiverId = {{ receiver.id }};  // Lấy từ Django template
+        const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+        const wsUrl = `${wsProtocol}://${window.location.host}/ws/chat/${receiverId}/`;
+
+
+        chatSocket = new WebSocket(wsUrl);
+
+        chatSocket.onopen = function () {
+            console.log("WebSocket connection opened");
+        };
+
+        chatSocket.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('chat-message');
+            messageElement.innerHTML = `<strong>${data.sender}</strong>: ${data.message}`;
+            document.querySelector('#chat-log').appendChild(messageElement);
+            document.querySelector('#chat-log').scrollTop = document.querySelector('#chat-log').scrollHeight;
+        };
+
+        chatSocket.onclose = function (e) {
+            console.log("WebSocket closed, attempting to reconnect...");
+            setTimeout(connectWebSocket, 10000); // Thử kết nối lại sau 1 giây
+        };
+    }
+
+    // Hàm gửi tin nhắn với kiểm tra trạng thái WebSocket
+    function sendMessage() {
+        const messageInputDom = document.querySelector('#chat-message-input');
+        const message = messageInputDom.value;
+
+        // Kiểm tra trạng thái WebSocket trước khi gửi tin nhắn
+        if (chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({
+                'message': message
+            }));
+            messageInputDom.value = '';
+        } else {
+            console.log("WebSocket is not open: readyState is " + chatSocket.readyState);
+        }
+    }
+
+    document.querySelector('#send-button').onclick = function() {
+        sendMessage();
+    };
+
+    // Kết nối WebSocket khi trang được tải
+    connectWebSocket();
+</script>
+
+</body>
+</html>
