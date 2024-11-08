@@ -54,13 +54,15 @@
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
+
         <div class="collapse navbar-collapse" id="navbarNav">
+              {% if user.is_authenticated %}
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="#"><i class="fas fa-home"></i></a>
+                    <a class="nav-link" href="{% url 'home' %}"><i class="fas fa-home"></i></a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#"><i class="fas fa-user-friends"></i></a>
+                    <a class="nav-link" href="{% url 'add_friend' request.user.id %}"><i class="fas fa-user-friends"></i></a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="#"><i class="fas fa-users"></i></a>
@@ -68,25 +70,15 @@
                  <li class="nav-item">
                     <a class="nav-link" href="{% url 'page_list_user' %}"><i class="fas fa-page4"></i></a>
                 </li>
+            </ul>
+            {% endif %}
 
-            </ul>
-            <ul>
-<!--                {% for friend in friends %}-->
-<!--                <li class="nav-item">-->
-<!--                    <a class="nav-link" href="{% url 'chat_view' friend.friend.id %}">-->
-<!--                        <i class="fas fa-comment-alt"></i> Chat with {{ friend.friend.username }}-->
-<!--                    </a>-->
-<!--                </li>-->
-<!--                {% endfor %}-->
-            </ul>
 
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item icon">
                     <a class="nav-link" href="#"><i class="fas fa-bell"></i></a>
                     <span class="notification-count">0</span>
                 </li>
-
-
                 {% if user.is_authenticated %}
                 <li class="nav-item dropdown icon">
                     <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"

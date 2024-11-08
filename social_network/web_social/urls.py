@@ -31,6 +31,8 @@ urlpatterns = [
     # Friend management URLs
     path('friends/<int:user_id>/', views.list_friends, name='list_friends'),
     path('add_friend/<int:user_id>/', views.add_friend, name='add_friend'),
+    path('friends/<int:user_id>/block/<int:friend_id>/', views.block_friend, name='block_friend'),
+    path('friends/<int:user_id>/unblock/<int:friend_id>/', views.unblock_friend, name='unblock_friend'),
     path('unfriend/<int:user_id>/<int:friend_id>/', views.unfriend, name='unfriend'),
     path('accept_friend_request/<int:user_id>/<int:friend_id>/', views.accept_friend_request,
          name='accept_friend_request'),

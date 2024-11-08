@@ -2,23 +2,47 @@
 {% block content %}
 
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
     <title>User Activity</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css">
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.7.2/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.7.2/font/bootstrap-icons.min.css">
     <style>
         .scrollable-container {
             height: 100vh; /* Chiều cao toàn màn hình */
             overflow-y: auto; /* Thêm cuộn dọc */
             padding-top: 55px; /* Thêm khoảng cách phía trên */
         }
-
         .list-group-item {
             margin-bottom: 20px; /* Thêm khoảng cách cuối mỗi item */
+            padding: 20px; /* Thêm padding cho mỗi item */
+            border: 1px solid #e3e3e3; /* Thêm viền cho mỗi item */
+            border-radius: 10px; /* Bo tròn các góc */
+            background-color: #fff; /* Màu nền trắng */
         }
-
+        .post-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px; /* Khoảng cách dưới */
+        }
+        .post-header img {
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            margin-right: 10px; /* Khoảng cách phải */
+        }
+        .post-actions {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .post-actions .btn {
+            flex: 1;
+            margin-right: 5px;
+        }
+        .post-actions .btn:last-child {
+            margin-right: 0;
+        }
     </style>
 </head>
 <body>
@@ -26,22 +50,26 @@
     <ul class="list-group mb-4">
         {% for post in posts %}
         <li class="list-group-item">
-            <div class="d-flex justify-content-between align-items-center">
+            <div class="post-header">
+                <img src="{{ post.author.avatar.url }}" alt="Avatar">
                 <div>
                     <strong>{{ post.author.username }}</strong><br>
-                    {{ post.content|safe }}<br>
                     <small class="text-muted">{{ post.created_at }}</small>
-                    <br>
-                    <small class="text-muted">{{ post.total_likes }}</small>
                 </div>
             </div>
-            <div class="d-flex justify-content-end mt-2">
-                <button class="btn btn-outline-primary me-2" href="{% url 'like_post' post.pk %}">
-                    <a class="bi bi-heart" href="{% url 'like_post' post.pk %}">Like</a>
-                </button>
-                <button class="btn btn-outline-secondary me-2">
-                    <a class="bi bi-chat" href="{% url 'post_detail' post.pk %}"> Comment</a>
-                </button>
+            <div class="post-content">
+                {{ post.content|safe }}
+            </div>
+            <div class="post-footer text-muted">
+                <small>{{ post.total_likes }} likes</small>
+            </div>
+            <div class="post-actions mt-2">
+                <a class="btn btn-outline-primary" href="{% url 'like_post' post.pk %}">
+                    <i class="bi bi-heart"></i> Like
+                </a>
+                <a class="btn btn-outline-secondary" href="{% url 'post_detail' post.pk %}">
+                    <i class="bi bi-chat"></i> Comment
+                </a>
                 <button class="btn btn-outline-success">
                     <i class="bi bi-share"></i> Share
                 </button>

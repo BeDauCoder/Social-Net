@@ -2,42 +2,42 @@
 {% block content %}
 <div class="container mt-5">
     <h2 class="text-center mb-4">Chỉnh sửa hồ sơ</h2>
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" enctype="multipart/form-data" class="p-4 border rounded bg-light shadow-sm">
         {% csrf_token %}
         <div class="mb-3 row">
             <label for="id_card_image" class="col-sm-2 col-form-label">Ảnh bìa:</label>
             <div class="col-sm-10">
-                {{ profile_form.card_image }}
+                <input type="file" id="id_card_image" name="card_image" class="form-control">
             </div>
         </div>
         <div class="mb-3 row">
             <label for="id_avatar" class="col-sm-2 col-form-label">Ảnh đại diện:</label>
             <div class="col-sm-10">
-                {{ profile_form.avatar }}
+                <input type="file" id="id_avatar" name="avatar" class="form-control">
             </div>
         </div>
         <div class="mb-3 row">
             <label for="id_first_name" class="col-sm-2 col-form-label">Tên:</label>
             <div class="col-sm-10">
-                {{ user_form.first_name }}
+                <input type="text" id="id_first_name" name="first_name" class="form-control" value="{{ user_form.first_name.value }}">
             </div>
         </div>
         <div class="mb-3 row">
             <label for="id_last_name" class="col-sm-2 col-form-label">Họ:</label>
             <div class="col-sm-10">
-                {{ user_form.last_name }}
+                <input type="text" id="id_last_name" name="last_name" class="form-control" value="{{ user_form.last_name.value }}">
             </div>
         </div>
         <div class="mb-3 row">
             <label for="id_date_of_birth" class="col-sm-2 col-form-label">Ngày sinh:</label>
             <div class="col-sm-10">
-                {{ profile_form.date_of_birth }}
+                <input type="date" id="id_date_of_birth" name="date_of_birth" class="form-control" value="{{ profile_form.date_of_birth.value }}">
             </div>
         </div>
         <div class="mb-3 row">
             <label for="id_hometown" class="col-sm-2 col-form-label">Quê quán:</label>
             <div class="col-sm-10">
-                {{ profile_form.hometown }}
+                <input type="text" id="id_hometown" name="hometown" class="form-control" value="{{ profile_form.hometown.value }}">
             </div>
         </div>
         <div class="text-center">

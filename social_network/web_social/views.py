@@ -22,19 +22,32 @@ from .models import Page
 
 def register(request):
     if request.method == 'POST':
-        username = request.POST['username']
-        email = request.POST['email']
-        password = request.POST['password']
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('confirm_password')
+        email = request.POST.get('email')
+
+        if password != confirm_password:
+            messages.error(request, "Passwords do not match.")
+            return redirect('register')
+
+        # Kiểm tra xem người dùng đã tồn tại chưa
         if User.objects.filter(username=username).exists():
-            messages.error(request, 'Tài Khoản đã tồn tại')
-        elif User.objects.filter(email=email).exists():
-            messages.error(request, 'Email đã được sử dụng')
-        else:
-            user = User.objects.create_user(username=username, email=email, password=password)
-            user.save()
-            messages.success(request, 'Tạo Tài Khoản Thành Công')
-            return redirect('login')
-    return render(request,'register.html')
+            messages.error(request, "Username already exists.")
+            return redirect('register')
+
+        if User.objects.filter(email=email).exists():
+            messages.error(request, "Email already exists.")
+            return redirect('register')
+
+        # Tạo người dùng mới nếu tất cả điều kiện thỏa mãn
+        user = User.objects.create_user(username=username, password=password, email=email)
+        user.save()
+
+        messages.success(request, "Registration successful! Please login.")
+        return redirect('login')
+
+    return render(request, 'register.html')
 
 def login_user(request):
     if request.method == 'POST':
@@ -56,23 +69,38 @@ def user_logout(request):
 @login_required
 def home(request):
     user = request.user
+
+    # Lấy danh sách bạn bè
+    friends = Friend.objects.filter(user=user, status='accepted').values_list('friend_id', flat=True)
+
+    # Lấy danh sách người đã chặn hoặc bị chặn
+    blocked_users = Friend.objects.filter(
+        models.Q(user=user, status='blocked') | models.Q(friend=user, status='blocked')
+    ).values_list('user_id', 'friend_id')
+
+    blocked_user_ids = {blocked_id for blocked_ids in blocked_users for blocked_id in blocked_ids}
+
+    # Lọc các bài viết dựa trên quyền riêng tư và trạng thái chặn
     posts = Post.objects.filter(
-        models.Q(privacy='public') |
-        models.Q(author=user)
+        (models.Q(privacy='public') |
+         models.Q(author=user) |
+         (models.Q(privacy='friends') & models.Q(author__id__in=friends))
+         ) & ~models.Q(author__id__in=blocked_user_ids)
     )
+
+    # Lấy các lượt like và comment của người dùng hiện tại
     likes = Like.objects.filter(user=user)
     comments = Comment.objects.filter(user=user)
-    friends = Friend.objects.filter(user=user, status='accepted')  # Danh sách bạn bè
 
+    # Truyền dữ liệu vào context
     context = {
         'user': user,
         'posts': posts,
         'likes': likes,
         'comments': comments,
-        'friends': friends,  # Truyền danh sách bạn bè vào context
+        'friends': friends,  # Danh sách bạn bè của người dùng hiện tại
     }
     return render(request, 'home.html', context)
-
 
 
 def add_post(request):
@@ -136,15 +164,21 @@ def profile(request):
 # Xem danh sách bạn bè
 def list_friends(request, user_id):
     user = get_object_or_404(User, id=user_id)
-    friends = Friend.objects.filter(user=user, status='accepted')  # Bạn bè đã được chấp nhận
-    pending_friend_requests = Friend.objects.filter(friend=user, status='pending')  # Lời mời đang chờ xử lý
 
+    # Lấy danh sách bạn bè đã được chấp nhận và không bị chặn
+    friends = Friend.objects.filter(user=user, status='accepted')
+
+    # Lời mời kết bạn đang chờ và không bị chặn
+    pending_friend_requests = Friend.objects.filter(friend=user, status='pending').exclude(
+        user__in=Friend.objects.filter(status='blocked').values('friend'))
+
+    blocked_friends = Friend.objects.filter(user=user, status='blocked')
     return render(request, 'list_friends.html', {
         'user': user,
         'friends': friends,
-        'pending_friend_requests': pending_friend_requests
+        'pending_friend_requests': pending_friend_requests,
+        'blocked_friends': blocked_friends
     })
-
 
 
 # Gửi lời mời kết bạn
@@ -394,3 +428,45 @@ class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def test_func(self):
         post = self.get_object()
         return self.request.user == post.author
+
+# Chặn bạn bè
+def block_friend(request, user_id, friend_id):
+    user = get_object_or_404(User, id=user_id)
+    friend = get_object_or_404(User, id=friend_id)
+
+    # Kiểm tra xem mối quan hệ có tồn tại không
+    friendship, created = Friend.objects.get_or_create(user=user, friend=friend)
+
+    # Chuyển trạng thái thành "blocked"
+    friendship.status = 'blocked'
+    friendship.save()
+
+    # Nếu có quan hệ ngược lại, cũng chuyển thành "blocked"
+    Friend.objects.update_or_create(
+        user=friend, friend=user,
+        defaults={'status': 'blocked'}
+    )
+
+    return redirect('list_friends', user_id=user_id)
+
+
+# Bỏ chặn bạn bè
+# Bỏ chặn và thiết lập lại quan hệ bạn bè nếu cần
+def unblock_friend(request, user_id, friend_id):
+    user = get_object_or_404(User, id=user_id)
+    friend = get_object_or_404(User, id=friend_id)
+
+    # Xóa mối quan hệ blocked
+    Friend.objects.filter(user=user, friend=friend, status='blocked').delete()
+    Friend.objects.filter(user=friend, friend=user, status='blocked').delete()
+
+    # Kiểm tra lại quan hệ bạn bè sau khi bỏ chặn
+    existing_friendship = Friend.objects.filter(user=user, friend=friend).first()
+
+    # Nếu chưa có quan hệ "accepted", tạo lại mối quan hệ
+    if not existing_friendship:
+        Friend.objects.create(user=user, friend=friend, status='accepted')
+        Friend.objects.create(user=friend, friend=user, status='accepted')
+
+    return redirect('list_friends', user_id=user_id)
+

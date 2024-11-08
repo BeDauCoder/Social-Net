@@ -43,6 +43,7 @@ class Post(models.Model):
         ('public', 'Công khai'),
         ('friends', 'Bạn bè'),
         ('private', 'Chỉ mình tôi'),
+        ('blocked', 'Blocked'),
     ]
 
     author = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -139,4 +140,5 @@ class Page(models.Model):
 
     def __str__(self):
         return self.title
+
 

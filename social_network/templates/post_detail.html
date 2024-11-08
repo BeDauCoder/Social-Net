@@ -1,52 +1,50 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container mt-5">
-    <h2>{{ post.author.username }}'s Post</h2>
-    <p>{{ post.content|safe }}</p>
-    <small class="text-muted">Created at: {{ post.created_at }}</small>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h2 class="card-title">{{ post.author.username }}'s Post</h2>
+            <p class="card-text">{{ post.content|safe }}</p>
+            <small class="text-muted">Created at: {{ post.created_at }}</small>
+        </div>
+    </div>
     <hr>
 
     <!-- Form để thêm bình luận mới -->
-    <form method="post" action="{% url 'add_comment' post.pk %}">
+    <form method="post" action="{% url 'add_comment' post.pk %}" class="mt-3">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary mt-2">Comment</button>
+        <div class="mb-3">
+            {{ form.as_p }}
+        </div>
+        <button type="submit" class="btn btn-primary">Comment</button>
     </form>
+
     <!-- Like và Reply bình luận -->
-    <ul class="list-group">
+    <ul class="list-group mt-3">
         {% for comment in comments %}
-        <li class="list-group-item" style="border: 2px solid #007bff; border-radius: 10px; margin-bottom: 10px;">
+        <li class="list-group-item border border-primary rounded mb-3">
             <strong>{{ comment.user.username }}</strong><br>
-            {{ comment.text }}<br>
-            <small class="text-muted">{{ comment.created_at }}</small>
-            <small>Likes: {{ comment.total_likes_comment }}</small>
+            <p>{{ comment.text }}</p>
+            <small class="text-muted">{{ comment.created_at }}</small> |
+            <small class="text-muted">Likes: {{ comment.total_likes_comment }}</small>
 
-            <button class="btn btn-outline-primary btn-sm like-btn" data-id="{{ comment.id }}">Like</button>
-            <button class="btn btn-outline-secondary btn-sm reply-btn" data-id="{{ comment.id }}">Reply</button>
-
-            {% if comment.user == request.user %}
-            <!-- Nút Delete chỉ hiển thị nếu người dùng là tác giả của bình luận -->
-            <button class="btn btn-outline-danger btn-sm delete-btn" data-id="{{ comment.id }}">
-                Delete
-            </button>
-            {% endif %}
-
-            {% if comment.user == request.user %}
-            <!-- Nút Edit chỉ hiển thị nếu người dùng là tác giả của bình luận -->
-            <button class="btn btn-outline-warning btn-sm edit-btn" data-id="{{ comment.id }}">
-                Edit
-            </button>
-            {% endif %}
+            <div class="mt-2">
+                <button class="btn btn-outline-primary btn-sm me-2 like-btn" data-id="{{ comment.id }}">Like</button>
+                <button class="btn btn-outline-secondary btn-sm reply-btn" data-id="{{ comment.id }}">Reply</button>
+                {% if comment.user == request.user %}
+                <button class="btn btn-outline-danger btn-sm delete-btn" data-id="{{ comment.id }}">Delete</button>
+                <button class="btn btn-outline-warning btn-sm edit-btn" data-id="{{ comment.id }}">Edit</button>
+                {% endif %}
+            </div>
 
             <!-- Hiển thị các reply -->
-            <div class="ml-4 mt-3">
+            <div class="mt-3 ms-4">
                 {% for reply in comment.replies.all %}
-                <div class="media mb-3" style="border: 1px solid #dcdcdc; border-radius: 10px; padding: 10px;">
+                <div class="media mb-3 p-2 border border-secondary rounded">
                     <strong>{{ reply.user.username }}</strong><br>
-                    {{ reply.text }}
-                    <small class="text-muted d-block">Commented at: {{ reply.created_at }}</small>
+                    <p>{{ reply.text }}</p>
+                    <small class="text-muted">Commented at: {{ reply.created_at }}</small>
                 </div>
-
                 {% endfor %}
             </div>
         </li>

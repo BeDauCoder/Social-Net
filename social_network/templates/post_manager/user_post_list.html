@@ -6,7 +6,7 @@
     <ul class="list-group">
         {% for post in posts %}
             <li class="list-group-item">
-                <p><strong>{{ post.content }}</strong></p>
+                <p><strong>{{ post.content|safe }}</strong></p>
                 <p>Quyền riêng tư: {{ post.get_privacy_display }}</p>
                 <p>Thích: {{ post.total_likes }}</p>
                 <a href="{% url 'post_edit' post.pk %}" class="btn btn-sm btn-info">Sửa</a>
