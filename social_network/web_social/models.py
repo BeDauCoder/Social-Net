@@ -10,6 +10,11 @@ class UserProfile(models.Model):
     card_image = models.ImageField(upload_to='avatars/', null=True, blank=True)
     date_of_birth = models.DateField(null=True, blank=True)
     hometown = models.CharField(max_length=100, null=True, blank=True)
+    deletion_requested_at = models.DateTimeField(null=True, blank=True)  # Thời gian yêu cầu xóa tài khoản
+
+    def request_account_deletion(self):
+        self.deletion_requested_at = timezone.now()
+        self.save()
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
@@ -38,6 +43,20 @@ class GroupMember(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     joined_at = models.DateTimeField(auto_now_add=True)
 
+
+class Page(models.Model):
+    title = models.CharField(max_length=255)
+    content_html = models.TextField()
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pages')
+    cover_image = models.ImageField(upload_to='pages/covers/', null=True, blank=True)
+    avatar_image = models.ImageField(upload_to='pages/avatars/', null=True, blank=True)
+    views = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+
 class Post(models.Model):
     PRIVACY_CHOICES = [
         ('public', 'Công khai'),
@@ -45,13 +64,16 @@ class Post(models.Model):
         ('private', 'Chỉ mình tôi'),
         ('blocked', 'Blocked'),
     ]
-
+    page = models.ForeignKey(Page, on_delete=models.CASCADE, related_name='posts',null=True, blank=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True, blank=True)
     privacy = models.CharField(max_length=10, choices=PRIVACY_CHOICES, default='public')
     likes = models.ManyToManyField(User, related_name='liked_posts', blank=True)
+
+    # Thêm trường mới để chỉ định tường của ai (có thể là bạn bè hoặc bản thân)
+    posted_on_wall = models.ForeignKey(User, on_delete=models.CASCADE, related_name="wall_posts", null=True, blank=True)
     def __str__(self):
         return self.content[:20]
 
@@ -87,9 +109,13 @@ class Comment(models.Model):
 
 
 class Share(models.Model):
-    post = models.ForeignKey(Post, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    shared_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} shared {self.post.title}"
+
 
 class Follower(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='follower')
@@ -98,6 +124,15 @@ class Follower(models.Model):
 
     class Meta:
         unique_together = ('user', 'following')
+
+class FriendRequest(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_requests')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_requests')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('sender', 'receiver')
+
 
 class Friend(models.Model):
     STATUS_CHOICES = [
@@ -129,16 +164,6 @@ class Block(models.Model):
     def __str__(self):
         return f'{self.user.username} has blocked {self.blocked_user.username}'
 
-class Page(models.Model):
-    title = models.CharField(max_length=255)
-    content_html = models.TextField()
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pages')
-    cover_image = models.ImageField(upload_to='pages/covers/', null=True, blank=True)
-    avatar_image = models.ImageField(upload_to='pages/avatars/', null=True, blank=True)
-    views = models.PositiveIntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return self.title
 
 

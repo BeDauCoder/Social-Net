@@ -28,3 +28,16 @@ class ReplySerializer(serializers.ModelSerializer):
         }
 
 
+
+from .models import Follower, FriendRequest
+
+class FollowerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Follower
+        fields = ['id', 'user', 'following', 'created_at']
+
+class FriendRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FriendRequest
+        fields = ['id', 'sender', 'receiver', 'created_at']
+

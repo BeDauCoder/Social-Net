@@ -31,8 +31,10 @@
             <div class="mt-2">
                 <button class="btn btn-outline-primary btn-sm me-2 like-btn" data-id="{{ comment.id }}">Like</button>
                 <button class="btn btn-outline-secondary btn-sm reply-btn" data-id="{{ comment.id }}">Reply</button>
-                {% if comment.user == request.user %}
+                {% if comment.user == request.user or post.author == request.user %}
                 <button class="btn btn-outline-danger btn-sm delete-btn" data-id="{{ comment.id }}">Delete</button>
+                {% endif %}
+                {% if comment.user == request.user %}
                 <button class="btn btn-outline-warning btn-sm edit-btn" data-id="{{ comment.id }}">Edit</button>
                 {% endif %}
             </div>
@@ -133,6 +135,7 @@
                 }
             });
         });
+
     </script>
 </div>
 {% endblock %}

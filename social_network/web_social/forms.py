@@ -18,6 +18,15 @@ class PostForm(forms.ModelForm):
             'privacy': 'Quyền riêng tư',
         }
 
+class PostWallForm(forms.ModelForm):
+    class Meta:
+        model = Post
+        fields = ['content', 'privacy']
+        widgets = {
+            'content': SummernoteWidget(attrs={'class': 'form-control'}),
+        }
+
+
 class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
