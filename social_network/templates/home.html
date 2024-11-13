@@ -1,88 +1,81 @@
 {% extends "base.html" %}
 {% block content %}
 
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <title>User Activity</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.7.2/font/bootstrap-icons.min.css">
-    <style>
-        .scrollable-container {
-            height: 100vh; /* Chiều cao toàn màn hình */
-            overflow-y: auto; /* Thêm cuộn dọc */
-            padding-top: 55px; /* Thêm khoảng cách phía trên */
-        }
-        .list-group-item {
-            margin-bottom: 20px; /* Thêm khoảng cách cuối mỗi item */
-            padding: 20px; /* Thêm padding cho mỗi item */
-            border: 1px solid #e3e3e3; /* Thêm viền cho mỗi item */
-            border-radius: 10px; /* Bo tròn các góc */
-            background-color: #fff; /* Màu nền trắng */
-        }
-        .post-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px; /* Khoảng cách dưới */
-        }
-        .post-header img {
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            margin-right: 10px; /* Khoảng cách phải */
-        }
-        .post-actions {
-            margin-top: 10px;
-            display: flex;
-            justify-content: space-between;
-        }
-        .post-actions .btn {
-            flex: 1;
-            margin-right: 5px;
-        }
-        .post-actions .btn:last-child {
-            margin-right: 0;
-        }
-    </style>
-</head>
-<body>
-<div class="container-fluid mt-4 scrollable-container">
-    <ul class="list-group mb-4">
-        {% for post in posts %}
-        <li class="list-group-item">
-            <div class="post-header">
-                <img src="{{ post.author.avatar.url }}" alt="Avatar">
-                <div>
-                    <strong>{{ post.author.username }}</strong><br>
-                    <small class="text-muted">{{ post.created_at }}</small>
-                </div>
-            </div>
-            <div class="post-content">
-                {{ post.content|safe }}
-            </div>
-            <div class="post-footer text-muted">
-                <small>{{ post.total_likes }} likes</small>
-            </div>
-            <div class="post-actions mt-2">
-                <a class="btn btn-outline-primary" href="{% url 'like_post' post.pk %}">
-                    <i class="bi bi-heart"></i> Like
-                </a>
-                <a class="btn btn-outline-secondary" href="{% url 'post_detail' post.pk %}">
-                    <i class="bi bi-chat"></i> Comment
-                </a>
-                <button class="btn btn-outline-success">
-                    <i class="bi bi-share"></i> Share
-                </button>
-            </div>
-        </li>
-        {% endfor %}
-    </ul>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <ul class="list-group mb-4">
+                <!-- Hiển thị các bài viết gốc -->
+                {% for post in posts %}
+                <li class="list-group-item mb-4 shadow-sm">
+                    <div class="post-header d-flex align-items-center mb-2">
+
+                        <div>
+                            <!-- Thêm liên kết đến profile của tác giả bài viết -->
+                            <a href="{% url 'profile' user_id=post.author.id %}" class="text-decoration-none">
+                                <strong>{{ post.author.username }}</strong>
+                            </a><br>
+                            <small class="text-muted">{{ post.created_at }}</small>
+                        </div>
+                    </div>
+                    <div class="post-content mb-2">
+                        {{ post.content|safe }}
+                    </div>
+                    <div class="post-footer text-muted">
+                        <small>{{ post.total_likes }} likes</small>
+                    </div>
+                    <div class="post-actions mt-2">
+                        <a class="btn btn-outline-primary btn-sm" href="{% url 'like_post' post.pk %}">
+                            <i class="bi bi-heart"></i> Like
+                        </a>
+                        <a class="btn btn-outline-secondary btn-sm" href="{% url 'post_detail' post.pk %}">
+                            <i class="bi bi-chat"></i> Comment
+                        </a>
+                        <a class="btn btn-outline-success btn-sm" href="{% url 'share_post' post.pk %}">
+                            <i class="bi bi-share"></i> Share
+                        </a>
+                    </div>
+                </li>
+                {% endfor %}
+
+                <!-- Hiển thị các bài viết được chia sẻ -->
+                {% for share in shared_posts %}
+                <li class="list-group-item mb-4 shadow-sm">
+                    <div class="post-header d-flex align-items-center mb-2">
+
+                        <div>
+                            <!-- Thêm liên kết đến profile của người chia sẻ và tác giả bài viết -->
+                            <a href="{% url 'profile' user_id=share.user.id %}" class="text-decoration-none">
+                                <strong>{{ share.user.username }}</strong>
+                            </a> đã chia sẻ bài viết của
+                            <a href="{% url 'profile' user_id=share.post.author.id %}" class="text-decoration-none">
+                                <strong>{{ share.post.author.username }}</strong>
+                            </a><br>
+                            <small class="text-muted">{{ share.shared_at }}</small>
+                        </div>
+                    </div>
+                    <div class="post-content mb-2">
+                        {{ share.post.content|safe }}
+                    </div>
+                    <div class="post-footer text-muted">
+                        <small>{{ share.post.total_likes }} likes</small>
+                    </div>
+                    <div class="post-actions mt-2">
+                        <a class="btn btn-outline-primary btn-sm" href="{% url 'like_post' share.post.pk %}">
+                            <i class="bi bi-heart"></i> Like
+                        </a>
+                        <a class="btn btn-outline-secondary btn-sm" href="{% url 'post_detail' share.post.pk %}">
+                            <i class="bi bi-chat"></i> Comment
+                        </a>
+                        <a class="btn btn-outline-success btn-sm" href="{% url 'share_post' share.post.pk %}">
+                            <i class="bi bi-share"></i> Share
+                        </a>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 </div>
 
-<!-- Bootstrap JS and dependencies -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.10.2/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.7.2/font/bootstrap-icons.min.js"></script>
-</body>
-</html>
 {% endblock %}

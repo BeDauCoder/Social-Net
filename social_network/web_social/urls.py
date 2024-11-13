@@ -16,6 +16,7 @@ urlpatterns = [
     path("register/", views.register, name='register'),
     path("", views.login_user, name="login"),
     path("logout/", views.user_logout, name="logout"),
+    path('delete_account/', views.delete_account, name='delete_account'),
 
     # Home and post URLs
     path("home/", views.home, name="home"),
@@ -24,8 +25,9 @@ urlpatterns = [
     path('post/<int:pk>/', views.post_detail, name='post_detail'),
     path('post/<int:pk>/add_comment/', views.add_comment, name='add_comment'),  # Add comment URL
 
+
     # Profile-related URLs
-    path('profile/', views.profile, name='profile'),
+    path('profile/<int:user_id>/', views.profile, name='profile'),
     path('edit_profile/', views.edit_profile, name='edit_profile'),
 
     # Friend management URLs
@@ -38,6 +40,13 @@ urlpatterns = [
          name='accept_friend_request'),
     path('reject_friend_request/<int:user_id>/<int:friend_id>/', views.reject_friend_request,
          name='reject_friend_request'),
+    path('following/', views.following_list, name='following_list'),
+    path('follow/<int:user_id>/', views.follow_user, name='follow_user'),
+    path('unfollow/<int:user_id>/', views.unfollow_user, name='unfollow_user'),
+    path('suggested_friends/', views.suggested_friends, name='suggested_friends'),
+    path('send_friend_request/<int:user_id>/', views.send_friend_request, name='send_friend_request'),
+    path('list_friends/<int:user_id>/', views.list_friends, name='list_friends'),
+
 
     # Include the API router for ViewSets
     path('', include(router.urls)),
@@ -57,6 +66,9 @@ urlpatterns = [
     path('my_posts/new/', views.PostCreateView.as_view(), name='post_create'),
     path('my_posts/<int:pk>/edit/', views.PostUpdateView.as_view(), name='post_edit'),
     path('my_posts/<int:pk>/delete/', views.PostDeleteView.as_view(), name='post_delete'),
+    path('share/<int:post_id>/', views.share_post, name='share_post'),
+    path('post/delete/<int:post_id>/', views.delete_post, name='delete_post'),
+
 ]
 
 # Static and media file serving in development
