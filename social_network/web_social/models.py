@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils.timezone import now
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -11,6 +12,8 @@ class UserProfile(models.Model):
     date_of_birth = models.DateField(null=True, blank=True)
     hometown = models.CharField(max_length=100, null=True, blank=True)
     deletion_requested_at = models.DateTimeField(null=True, blank=True)  # Thời gian yêu cầu xóa tài khoản
+    bio = models.TextField(null=True, blank=True)  # Thông tin cá nhân
+    status = models.CharField(max_length=255, null=True, blank=True)  # Trạng thái ngắn
 
     def request_account_deletion(self):
         self.deletion_requested_at = timezone.now()
@@ -52,6 +55,7 @@ class Page(models.Model):
     avatar_image = models.ImageField(upload_to='pages/avatars/', null=True, blank=True)
     views = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    editors = models.ManyToManyField(User, related_name='editable_pages', blank=True,null=True)
 
     def __str__(self):
         return self.title
@@ -163,6 +167,26 @@ class Block(models.Model):
 
     def __str__(self):
         return f'{self.user.username} has blocked {self.blocked_user.username}'
+
+
+class Tag(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='tags')
+    tagged_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tagged_posts')
+    approved = models.BooleanField(default=False)  # Trạng thái xác nhận
+
+    def __str__(self):
+        return f"{self.tagged_user.username} tagged in {self.post.content[:20]}"
+
+
+class Message(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_messages")
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_messages")
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.sender.username} -> {self.receiver.username}: {self.content[:20]}"
 
 
 

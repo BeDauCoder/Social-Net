@@ -8,11 +8,16 @@ https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
 """
 
 import os
+import sys
+
+# Thêm thư mục gốc vào PYTHONPATH
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-from social_network.web_social import routing  # Thêm module routing của ứng dụng chat
+from social_network.web_social import routing
+  # Thêm module routing của ứng dụng chat
 from django.core.asgi import get_asgi_application
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "social_network.settings")

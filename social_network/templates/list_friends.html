@@ -15,6 +15,7 @@
                 <div>
                     <a href="{% url 'unfriend' user.id friend.friend.id %}" class="btn btn-danger btn-sm me-2">Hủy kết bạn</a>
                     <a href="{% url 'block_friend' user.id friend.friend.id %}" class="btn btn-warning btn-sm">Chặn</a>
+                     <a href="{% url 'chat' user_id=friend.friend.id %}" class="btn btn-success btn-sm">Gửi Tin Nhắn</a>
                 </div>
             </li>
             {% empty %}
@@ -76,5 +77,6 @@
             {% endfor %}
         </ul>
     </div>
+
 </div>
 {% endblock %}

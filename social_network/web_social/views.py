@@ -72,7 +72,7 @@ def user_logout(request):
 
 
 from django.db import models
-from django.utils import timezone
+from django.db.models import Prefetch, Q
 
 @login_required
 def home(request):
@@ -94,12 +94,15 @@ def home(request):
     ordering = request.GET.get('ordering', 'by_likes')  # mặc định là sắp xếp theo "like"
 
     # Bộ lọc bài viết dựa trên quyền riêng tư và trạng thái chặn
-    posts = Post.objects.filter(
+    posts = (Post.objects.filter(
         (models.Q(privacy='public') |
          models.Q(author=user) |
          (models.Q(privacy='friends') & models.Q(author__id__in=friends))
          ) & ~models.Q(author__id__in=blocked_user_ids)
-    ).annotate(
+    ).prefetch_related(
+        Prefetch('tags', queryset=Tag.objects.filter(approved=True).select_related('tagged_user'), to_attr='approved_tags')
+    ).order_by('-created_at')
+    .annotate(
         # Tính số lượng "like" cho từng bài viết
         like_count=models.Count('likes'),
         # Gán mức độ ưu tiên cho mỗi bài viết: 1 là bạn bè, 2 là theo dõi, 3 là khác
@@ -109,7 +112,7 @@ def home(request):
             default=models.Value(3),
             output_field=models.IntegerField()
         )
-    )
+    ))
 
     if ordering == 'by_likes':
         # Sắp xếp bài viết theo mức độ ưu tiên và sau đó theo số lượng "like" trong từng nhóm
@@ -121,6 +124,12 @@ def home(request):
     # Lấy lượt thích và bình luận của người dùng
     likes = Like.objects.filter(user=user)
     comments = Comment.objects.filter(user=user)
+
+    # Lấy bài viết mà người dùng được gắn thẻ và đã chấp nhận
+    tagged_posts = Post.objects.filter(
+        tags__tagged_user=user,  # Người dùng được gắn thẻ
+        tags__approved=True  # Chỉ các tag đã được phê duyệt
+    ).exclude(author__id__in=blocked_user_ids)
 
     # Lấy các bài viết đã được chia sẻ bởi bạn bè hoặc chính người dùng
     shared_posts = Share.objects.filter(
@@ -136,6 +145,7 @@ def home(request):
         'friends': friends,
         'shared_posts': shared_posts,
         'ordering': ordering,
+        'tagged_posts': tagged_posts,
     }
     return render(request, 'home.html', context)
 
@@ -203,6 +213,8 @@ def profile(request, user_id):
         Q(author=profile_user) | Q(posted_on_wall=profile_user)
     ).order_by('-created_at')
 
+    shared_posts = Share.objects.filter(user=profile_user).order_by('-shared_at')
+
     # Xử lý form đăng bài
     if request.method == 'POST':
         form = PostWallForm(request.POST)
@@ -220,6 +232,7 @@ def profile(request, user_id):
         'user_profile': user_profile,
         'wall_posts': wall_posts,  # Đảm bảo rằng 'wall_posts' chứa cả bài viết của profile_user và bài đăng trên tường của họ
         'form': form,
+        'shared_posts': shared_posts,
     }
     return render(request, 'profile.html', context)
 
@@ -394,21 +407,36 @@ def add_comment(request, pk):
     # Chuyển hướng về trang chi tiết của bài viết
     return redirect('post_detail', pk=post.pk)
 
+
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from .models import Message
+from django.contrib.auth.models import User
 
 @login_required
-def chat_view(request, receiver_id):
-    receiver = get_object_or_404(User, id=receiver_id)
-    user = request.user
+def chat_view(request, user_id):
+    # Người bạn đang chat
+    other_user = get_object_or_404(User, id=user_id)
 
-    # Lấy danh sách bạn bè của người dùng hiện tại
-    friends = Friend.objects.filter(user=user, status='accepted')
+    # Lấy tin nhắn giữa hai người
+    messages = Message.objects.filter(
+        (models.Q(sender=request.user, receiver=other_user) |
+         models.Q(sender=other_user, receiver=request.user))
+    ).order_by('timestamp')
 
-    context = {
-        'receiver': receiver,  # Người nhận cụ thể mà bạn đang trò chuyện
-        'friends': friends      # Danh sách bạn bè
-    }
-    return render(request, 'chat.html', context)
+    # Đánh dấu các tin nhắn gửi đến người dùng hiện tại là "Đã đọc"
+    messages.filter(receiver=request.user, is_read=False).update(is_read=True)
+
+    # Nếu gửi tin nhắn
+    if request.method == "POST":
+        content = request.POST.get('content')
+        if content:
+            Message.objects.create(sender=request.user, receiver=other_user, content=content)
+        return redirect('chat', user_id=other_user.id)
+
+    return render(request, 'chat.html', {'messages': messages, 'other_user': other_user})
+
+
 
 
 
@@ -453,11 +481,21 @@ def page_list_user(request):
     return render(request, 'page_list_user.html', {'pages': pages})
 
 def page_detail_user(request, pk):
-    page = get_object_or_404(Page, pk=pk)  # Lấy trang theo khóa chính (primary key)
-    return render(request, 'page_detail.html', {'page': page})
+    page = get_object_or_404(Page, pk=pk)  # Lấy Page theo khóa chính
+
+    # Kiểm tra nếu người dùng không có quyền xem
+    if request.user != page.author and request.user not in page.editors.all():
+        return HttpResponseForbidden("Bạn không có quyền truy cập trang này.")
+
+    # Render template với thông tin Page và editors
+    return render(request, 'page_detail.html', {
+        'page': page,
+        'editors': page.editors.all()  # Truyền danh sách editors cho template
+    })
 
 
-# Danh sách bài viết của người dùng trên trang cá nhân
+# Quản lý bài viết
+from .models import Post, Tag
 class UserPostListView(LoginRequiredMixin, ListView):
     model = Post
     template_name = 'post_manager/user_post_list.html'
@@ -465,6 +503,16 @@ class UserPostListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return Post.objects.filter(author=self.request.user).order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Thêm danh sách các tag chưa được chấp nhận
+        context['pending_tags'] = Tag.objects.filter(
+            tagged_user=self.request.user,
+            approved=False
+        )
+        return context
+
 
 # Tạo bài viết mới
 class PostCreateView(LoginRequiredMixin, CreateView):
@@ -475,7 +523,16 @@ class PostCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.author = self.request.user
-        return super().form_valid(form)
+        response = super().form_valid(form)
+
+        # Gửi thông báo cho những người được gắn thẻ
+        tagged_users = form.cleaned_data.get('tagged_users', [])
+        for user in tagged_users:
+            # Gửi thông báo hoặc thực hiện logic bạn muốn
+            messages.info(self.request, f"Gửi yêu cầu gắn thẻ đến {user.username}")
+
+        return response
+
 
 # Sửa bài viết
 class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
@@ -488,6 +545,20 @@ class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         post = self.get_object()
         return self.request.user == post.author
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+
+        # Xóa các tag cũ
+        form.instance.tags.all().delete()
+
+        # Lưu lại tag mới
+        tagged_users = form.cleaned_data.get('tagged_users', [])
+        for user in tagged_users:
+            Tag.objects.create(post=form.instance, tagged_user=user)
+
+        return response
+
+
 # Xóa bài viết
 class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Post
@@ -497,6 +568,23 @@ class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def test_func(self):
         post = self.get_object()
         return self.request.user == post.author
+
+@login_required
+def remove_tag(request, tag_id):
+    tag = get_object_or_404(Tag, id=tag_id, tagged_user=request.user)
+    tag.delete()
+    messages.info(request, "Bạn đã từ chối gắn thẻ.")
+    return redirect('user_post_list')
+
+@login_required
+def approve_tag(request, tag_id):
+    tag = get_object_or_404(Tag, id=tag_id, tagged_user=request.user)
+    tag.approved = True
+    tag.save()
+    messages.success(request, "Bạn đã chấp nhận gắn thẻ.")
+    return redirect('user_post_list')
+
+
 
 # Chặn bạn bè
 def block_friend(request, user_id, friend_id):
@@ -558,15 +646,18 @@ def account_deleted(request):
 
 @login_required
 def share_post(request, post_id):
-    post = get_object_or_404(Post, pk=post_id)
+    try:
+        post = get_object_or_404(Post, pk=post_id)
+        existing_share = Share.objects.filter(user=request.user, post=post).exists()
+        if not existing_share:
+            Share.objects.create(user=request.user, post=post)
+        return redirect('profile', user_id=post.author.id)
+    except Exception as e:
+        # Ghi log lỗi
+        print(f"Error in share_post: {e}")
+        messages.error(request, "An error occurred while sharing the post.")
+        return redirect('home')
 
-    # Kiểm tra nếu người dùng hiện tại đã chia sẻ bài viết này chưa
-    existing_share = Share.objects.filter(user=request.user, post=post).exists()
-    if not existing_share:
-        # Tạo bản ghi chia sẻ mới nếu chưa có
-        Share.objects.create(user=request.user, post=post)
-
-    return redirect('profile', user_id=post.author.id)  # Quay lại trang cá nhân của người đăng bài
 
 @login_required
 def delete_post(request, post_id):
@@ -660,5 +751,108 @@ def unfollow_user(request, user_id):
     Follower.objects.filter(user=request.user, following=target_user).delete()
     messages.success(request, f"Bạn đã bỏ theo dõi {target_user.username}.")
     return redirect('following_list')  # Điều hướng về trang danh sách theo dõi (hoặc trang mong muốn khác)
+
+
+
+from django.views.generic.edit import FormView
+from .forms import PagePostForm
+
+class PagePostCreateView(FormView):
+    template_name = 'page_manager/page_post_form.html'
+    form_class = PagePostForm
+
+    def form_valid(self, form):
+        # Lấy Page từ URL
+        page = get_object_or_404(Page, pk=self.kwargs['page_id'])
+        post = form.save(commit=False)
+        post.page = page  # Gán bài viết vào Page
+        post.author = self.request.user  # Gán tác giả
+        post.save()
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('page_detail', kwargs={'pk': self.kwargs['page_id']})
+
+
+
+class PostPostUpdateView(UpdateView):
+    model = Post
+    form_class = PagePostForm
+    template_name = 'page_manager/page_post_form.html'
+
+    def get_queryset(self):
+        # Đảm bảo chỉ cho phép sửa bài viết của user
+        return Post.objects.filter(author=self.request.user)
+
+    def get_success_url(self):
+        # Quay lại trang chi tiết Page sau khi sửa
+        return reverse_lazy('page_detail', kwargs={'pk': self.object.page.id})
+
+@login_required
+def PostPostDeleteView(request, post_id):
+    post = get_object_or_404(Post, id=post_id, author=request.user)
+    page_id = post.page.id  # Lưu lại ID Page để quay lại sau khi xóa
+    if request.method == 'POST':
+        post.delete()
+        return redirect('page_detail', pk=page_id)
+    return render(request, 'page_post_confirm_delete.html', {'post': post})
+
+
+from django.http import HttpResponseForbidden
+
+@login_required
+def manage_editors(request, page_id):
+    page = get_object_or_404(Page, id=page_id)
+
+    if page.author != request.user:
+        return HttpResponseForbidden("Bạn không có quyền quản lý trang này.")
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+        username = request.POST.get("username")
+        user = get_object_or_404(User, username=username)
+
+        if action == "add":
+            page.editors.add(user)
+            messages.success(request, f"Đã thêm quyền cho {user.username}.")
+        elif action == "remove":
+            page.editors.remove(user)
+            messages.success(request, f"Đã xóa quyền của {user.username}.")
+        else:
+            messages.error(request, "Hành động không hợp lệ.")
+
+    return redirect('page_list')
+
+
+def search_view(request):
+    query = request.GET.get('q')  # Lấy từ khóa tìm kiếm từ input "q"
+    pages = None
+    posts = None
+    friends = None
+
+    if query:
+        # Tìm kiếm trong model Page
+        pages = Page.objects.filter(
+            Q(title__icontains=query) | Q(content_html__icontains=query)
+        )
+
+        # Tìm kiếm trong model Post
+        posts = Post.objects.filter(
+            Q(content__icontains=query) | Q(author__username__icontains=query)
+        )
+
+        # Tìm kiếm trong Friend (tìm bạn bè theo username)
+        friends = Friend.objects.filter(
+            Q(user__username__icontains=query) | Q(friend__username__icontains=query)
+        )
+
+    context = {
+        'query': query,
+        'pages': pages,
+        'posts': posts,
+        'friends': friends,
+    }
+    return render(request, 'search_results.html', context)
+
 
 

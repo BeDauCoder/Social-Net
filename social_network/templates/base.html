@@ -56,23 +56,28 @@
         </button>
 
         <div class="collapse navbar-collapse" id="navbarNav">
-              {% if user.is_authenticated %}
+            {% if user.is_authenticated %}
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'home' %}"><i class="fas fa-home"></i></a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'add_friend' request.user.id %}"><i class="fas fa-user-friends"></i></a>
+                    <a class="nav-link" href="{% url 'add_friend' request.user.id %}"><i
+                            class="fas fa-user-friends"></i></a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="#"><i class="fas fa-users"></i></a>
                 </li>
-                 <li class="nav-item">
+                <li class="nav-item">
                     <a class="nav-link" href="{% url 'page_list_user' %}"><i class="fas fa-page4"></i></a>
                 </li>
             </ul>
             {% endif %}
 
+            <form class="d-flex" method="get" action="{% url 'search_view' %}">
+                <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="q">
+                <button class="btn btn-outline-success" type="submit">Search</button>
+            </form>
 
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item icon">
@@ -90,8 +95,8 @@
                         <li><a href="{% url 'page_list' %}" class="dropdown-item">Manager Page</a></li>
                         <li><a class="dropdown-item" href="{% url 'add_friend' request.user.id %}">List Friend</a></li>
                         <li><a class="dropdown-item" href="{% url 'user_post_list' %}">Manager Post</a></li>
-                         <li><a class="dropdown-item" href="{% url 'following_list' %}">Manager Follower</a></li>
-                         <li><a class="dropdown-item" href="{% url 'suggested_friends' %}">Suggested Friend</a></li>
+                        <li><a class="dropdown-item" href="{% url 'following_list' %}">Manager Follower</a></li>
+                        <li><a class="dropdown-item" href="{% url 'suggested_friends' %}">Suggested Friend</a></li>
                         <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
                     </ul>
                 </li>

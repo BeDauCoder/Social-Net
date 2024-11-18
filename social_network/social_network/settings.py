@@ -45,7 +45,8 @@ INSTALLED_APPS = [
     "web_social",
     "django_summernote",
     "rest_framework",
-    "channels"
+    "channels",
+    "social_network"
 ]
 
 MIDDLEWARE = [
@@ -140,8 +141,10 @@ MAX_UPLOAD_SIZE = 10485760  # 10 * 1024 * 1024 bytes
 DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE
 FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE
 SUMMERNOTE_CONFIG = {
-    'attachment_upload_to': 'uploads/',  # Đường dẫn trong MEDIA_ROOT
-    'attachment_filesize_limit': 10485760,
+    'iframe': False,  # Hiển thị video trong nội dung chính (không dùng iframe)
+    'attachment_filesize_limit': 104857600,  # Giới hạn kích thước file upload (100MB)
+    'attachment_upload_to': 'uploads/',  # Thư mục lưu trữ tệp đính kèm
+
 }
 
 # Thiết lập ASGI cho Django Channels

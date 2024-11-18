@@ -5,6 +5,8 @@ from django.conf.urls.static import static
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import CommentViewSet
+from django.urls import path
+from .consumers import ChatConsumer
 
 router = DefaultRouter()
 router.register(r'comments', CommentViewSet)
@@ -50,24 +52,35 @@ urlpatterns = [
 
     # Include the API router for ViewSets
     path('', include(router.urls)),
-    path('chat/<int:receiver_id>/', views.chat_view, name='chat_view'),
+    path('chat/<int:user_id>/', views.chat_view, name='chat'),
 
     #manager page
     path('page_manager/', views.PageListView.as_view(), name='page_list'),
     path('page_manager/new/', views.PageCreateView.as_view(), name='page_create'),
     path('page_manager/<int:pk>/edit/', views.PageUpdateView.as_view(), name='page_edit'),
     path('page_manager/<int:pk>/delete/', views.PageDeleteView.as_view(), name='page_delete'),
-
     path('pages/', views.page_list_user, name='page_list_user'),  # Đường dẫn cho danh sách trang
     path('pages/<int:pk>/', views.page_detail_user, name='page_detail'),  # Đường dẫn cho chi tiết từng trang
+    path('page/<int:page_id>/add-post/', views.PagePostCreateView.as_view(), name='page_post_create'),
+    # Sửa bài viết
+    path('post/<int:pk>/edit/', views.PostPostUpdateView.as_view(), name='post_edit'),
 
-    #manager posy
+    # Xóa bài viết
+    path('post/<int:post_id>/delete/', views.PostPostDeleteView, name='post_delete'),
+    path('manage-editors/<int:page_id>/', views.manage_editors, name='manage_editors'),
+
+
+    #manager post
     path('my_posts/', views.UserPostListView.as_view(), name='user_post_list'),
     path('my_posts/new/', views.PostCreateView.as_view(), name='post_create'),
     path('my_posts/<int:pk>/edit/', views.PostUpdateView.as_view(), name='post_edit'),
     path('my_posts/<int:pk>/delete/', views.PostDeleteView.as_view(), name='post_delete'),
     path('share/<int:post_id>/', views.share_post, name='share_post'),
     path('post/delete/<int:post_id>/', views.delete_post, name='delete_post'),
+    path('tag/approve/<int:tag_id>/', views.approve_tag, name='approve_tag'),
+    path('tag/remove/<int:tag_id>/', views.remove_tag, name='remove_tag'),
+
+    path('search/', views.search_view, name='search_view'),
 
 ]
 
