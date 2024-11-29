@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Search Results</h1>
+
+    {% if query %}
+        <p class="mb-4">Results for "<strong>{{ query }}</strong>":</p>
+
+        <h2 class="mt-4">Pages</h2>
+        {% if pages %}
+            <ul class="list-group mb-4">
+            {% for page in pages %}
+                <li class="list-group-item">
+                    <h5>
+                        <a href="{% url 'page_detail' page.pk %}" class="text-decoration-none">
+                            <strong>{{ page.title }}</strong>
+                        </a>
+                    </h5>
+                    <p class="text-muted">by
+                        <a href="{% url 'profile' user_id=page.author.id %}" class="text-decoration-none">
+                            <strong>{{ page.author.username }}</strong>
+                        </a>
+                    </p>
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <div class="alert alert-warning" role="alert">
+                No pages found.
+            </div>
+        {% endif %}
+
+        <h2 class="mt-4">Posts</h2>
+        {% if posts %}
+            <ul class="list-group mb-4">
+            {% for post in posts %}
+                <li class="list-group-item">
+                    <h5>
+                        <a href="{% url 'post_detail' post.pk %}" class="text-decoration-none">
+                            {{ post.content|safe }}
+                        </a>
+                    </h5>
+                    <p class="text-muted">by
+                        <a href="{% url 'profile' user_id=post.author.id %}" class="text-decoration-none">
+                            <strong>{{ post.author.username }}</strong>
+                        </a>
+                    </p>
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <div class="alert alert-warning" role="alert">
+                No posts found.
+            </div>
+        {% endif %}
+
+        <h2 class="mt-4">Friends</h2>
+        {% if friends %}
+            <ul class="list-group mb-4">
+            {% for friend in friends %}
+                <li class="list-group-item">
+                    <p>
+                        <a href="{% url 'profile' user_id=friend.user.id %}" class="text-decoration-none">
+                            <strong>{{ friend.user.username }}</strong>
+                        </a>
+                        is friends with
+                        <a href="{% url 'profile' user_id=friend.friend.id %}" class="text-decoration-none">
+                            <strong>{{ friend.friend.username }}</strong>
+                        </a>
+                        ({{ friend.status }})
+                    </p>
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <div class="alert alert-warning" role="alert">
+                No friends found.
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            Type something to search!
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

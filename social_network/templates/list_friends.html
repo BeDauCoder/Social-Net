@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Danh sách bạn bè của {{ user.username }}</h1>
+
+    <!-- Danh sách bạn bè -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h2>Bạn bè</h2>
+        </div>
+        <ul class="list-group list-group-flush">
+            {% for friend in friends %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>{{ friend.friend.username }}</span>
+                <div>
+                    <a href="{% url 'unfriend' user.id friend.friend.id %}" class="btn btn-danger btn-sm me-2">Hủy kết bạn</a>
+                    <a href="{% url 'block_friend' user.id friend.friend.id %}" class="btn btn-warning btn-sm">Chặn</a>
+                     <a href="{% url 'chat' user_id=friend.friend.id %}" class="btn btn-success btn-sm">Gửi Tin Nhắn</a>
+                </div>
+            </li>
+            {% empty %}
+            <li class="list-group-item">Bạn chưa có bạn bè nào.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Thêm bạn mới -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-success text-white">
+            <h2>Thêm bạn mới</h2>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{% url 'add_friend' user.id %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="new_friend_username" class="form-label">Nhập Username người bạn muốn thêm</label>
+                    <input type="text" id="new_friend_username" name="new_friend_username" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Thêm bạn</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lời mời kết bạn -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-info text-white">
+            <h2>Lời mời kết bạn</h2>
+        </div>
+        <ul class="list-group list-group-flush">
+            {% for friend_request in pending_friend_requests %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>{{ friend_request.user.username }} đã gửi lời mời kết bạn</span>
+                <div>
+                    <a href="{% url 'accept_friend_request' user.id friend_request.user.id %}" class="btn btn-success btn-sm me-2">Chấp nhận</a>
+                    <a href="{% url 'reject_friend_request' user.id friend_request.user.id %}" class="btn btn-danger btn-sm">Từ chối</a>
+                </div>
+            </li>
+            {% empty %}
+            <li class="list-group-item">Không có lời mời kết bạn.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Bạn bè đã bị chặn -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-danger text-white">
+            <h2>Bạn bè đã bị chặn</h2>
+        </div>
+        <ul class="list-group list-group-flush">
+            {% for blocked in blocked_friends %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>{{ blocked.friend.username }}</span>
+                <a href="{% url 'unblock_friend' user.id blocked.friend.id %}" class="btn btn-success btn-sm">Bỏ chặn</a>
+            </li>
+            {% empty %}
+            <li class="list-group-item">Bạn chưa chặn bạn bè nào.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+</div>
+{% endblock %}

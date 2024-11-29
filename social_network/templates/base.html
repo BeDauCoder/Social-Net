@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Web</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/register.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.18/summernote-bs4.min.css" rel="stylesheet">
+     <!-- Thêm Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Thêm icon nếu dùng -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 70px; /* Để nội dung không bị tràn lên navbar */
+        }
+
+        .navbar-brand {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .navbar-nav .nav-item .nav-link {
+            font-size: 18px;
+            margin: 0 10px;
+        }
+
+        .navbar-nav .nav-item .nav-link i {
+            font-size: 24px;
+        }
+
+        .icon {
+            position: relative;
+        }
+
+        .notification-count {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+        }
+
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'home' %}">Social</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            {% if user.is_authenticated %}
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'home' %}"><i class="fas fa-home"></i></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'add_friend' request.user.id %}"><i
+                            class="fas fa-user-friends"></i></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#"><i class="fas fa-users"></i></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'page_list_user' %}"><i class="fas fa-page4"></i></a>
+                </li>
+            </ul>
+            {% endif %}
+
+            <form class="d-flex" method="get" action="{% url 'search_view' %}">
+                <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="q">
+                <button class="btn btn-outline-success" type="submit">Search</button>
+            </form>
+
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item icon">
+                    <a class="nav-link" href="#"><i class="fas fa-bell"></i></a>
+                    <span class="notification-count">0</span>
+                </li>
+                {% if user.is_authenticated %}
+                <li class="nav-item dropdown icon">
+                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user-circle"></i>
+                        {{ user.username }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li><a class="dropdown-item" href="{% url 'profile' user_id=request.user.id %}">Profile</a></li>
+                        <li><a href="{% url 'page_list' %}" class="dropdown-item">Manager Page</a></li>
+                        <li><a class="dropdown-item" href="{% url 'add_friend' request.user.id %}">List Friend</a></li>
+                        <li><a class="dropdown-item" href="{% url 'user_post_list' %}">Manager Post</a></li>
+                        <li><a class="dropdown-item" href="{% url 'following_list' %}">Manager Follower</a></li>
+                        <li><a class="dropdown-item" href="{% url 'suggested_friends' %}">Suggested Friend</a></li>
+                        <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                    </ul>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'login' %}">Login</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'register' %}">Register</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+<main class="pt-5">
+    {% block content %}
+    {% endblock %}
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.18/summernote-bs4.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+<!-- Bootstrap JS + Popper.js -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

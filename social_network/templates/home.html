@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <ul class="list-group mb-4">
+                <!-- Hiển thị các bài viết gốc -->
+                {% for post in posts %}
+                <li class="list-group-item mb-4 shadow-sm">
+                    <div class="post-header d-flex align-items-center mb-2">
+
+                        <div>
+                            <!-- Thêm liên kết đến profile của tác giả bài viết -->
+                            <a href="{% url 'profile' user_id=post.author.id %}" class="text-decoration-none">
+                                <strong>{{ post.author.username }}</strong>
+                            </a>
+                            {% if post.approved_tags %}
+                            <!-- Hiển thị thông tin người được gắn thẻ -->
+                            đã gắn thẻ
+                            {% for tag in post.approved_tags %}
+                            <a href="{% url 'profile' user_id=tag.tagged_user.id %}" class="text-decoration-none">
+                                <strong>{{ tag.tagged_user.username }}</strong>
+                            </a>
+                            {% if tag.tagged_user == request.user %}
+                            <!-- Hiển thị nút xóa tag cho người được gắn thẻ -->
+                            <a href="{% url 'remove_tag' tag.id %}" class="btn btn-sm btn-danger ml-2">Xóa tag</a>
+                            {% endif %}
+                            {% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                            {% endif %}
+                            <br>
+                            <small class="text-muted">{{ post.created_at }}</small>
+                        </div>
+                    </div>
+                    <div class="post-content mb-2">
+                        {{ post.content|safe }}
+                    </div>
+                    <div class="post-footer text-muted">
+                        <small>{{ post.total_likes }} likes</small>
+                    </div>
+                    <div class="post-actions mt-2">
+                        <a class="btn btn-outline-primary btn-sm" href="{% url 'like_post' post.pk %}">
+                            <i class="bi bi-heart"></i> Like
+                        </a>
+                        <a class="btn btn-outline-secondary btn-sm" href="{% url 'post_detail' post.pk %}">
+                            <i class="bi bi-chat"></i> Comment
+                        </a>
+                        <a class="btn btn-outline-success btn-sm" href="{% url 'share_post' post.pk %}">
+                            <i class="bi bi-share"></i> Share
+                        </a>
+                    </div>
+                </li>
+                {% endfor %}
+
+                {% for post in tagged_posts %}
+                <li class="list-group-item mb-4 shadow-sm">
+                    <div class="post-header d-flex align-items-center mb-2">
+                        <div>
+                            <a href="{% url 'profile' user_id=post.author.id %}" class="text-decoration-none">
+                                <strong>{{ post.author.username }}</strong>
+                            </a> đã gắn thẻ bạn<br>
+                            <small class="text-muted">{{ post.created_at }}</small>
+                        </div>
+                    </div>
+                    <div class="post-content mb-2">
+                        {{ post.content|safe }}
+                    </div>
+                    <div class="post-footer text-muted">
+                        <small>{{ post.total_likes }} likes</small>
+                    </div>
+                    <div class="post-actions mt-2">
+                        <a class="btn btn-outline-primary btn-sm" href="{% url 'like_post' post.pk %}">
+                            <i class="bi bi-heart"></i> Like
+                        </a>
+                        <a class="btn btn-outline-secondary btn-sm" href="{% url 'post_detail' post.pk %}">
+                            <i class="bi bi-chat"></i> Comment
+                        </a>
+                        <a class="btn btn-outline-success btn-sm" href="{% url 'share_post' post.pk %}">
+                            <i class="bi bi-share"></i> Share
+                        </a>
+                    </div>
+                </li>
+                {% endfor %}
+
+                <!-- Hiển thị các bài viết được chia sẻ -->
+                {% for share in shared_posts %}
+                <li class="list-group-item mb-4 shadow-sm">
+                    <div class="post-header d-flex align-items-center mb-2">
+
+                        <div>
+                            <!-- Thêm liên kết đến profile của người chia sẻ và tác giả bài viết -->
+                            <a href="{% url 'profile' user_id=share.user.id %}" class="text-decoration-none">
+                                <strong>{{ share.user.username }}</strong>
+                            </a> đã chia sẻ bài viết của
+                            <a href="{% url 'profile' user_id=share.post.author.id %}" class="text-decoration-none">
+                                <strong>{{ share.post.author.username }}</strong>
+                            </a><br>
+                            <small class="text-muted">{{ share.shared_at }}</small>
+                        </div>
+                    </div>
+                    <div class="post-content mb-2">
+                        {{ share.post.content|safe }}
+                    </div>
+                    <div class="post-footer text-muted">
+                        <small>{{ share.post.total_likes }} likes</small>
+                    </div>
+                    <div class="post-actions mt-2">
+                        <a class="btn btn-outline-primary btn-sm" href="{% url 'like_post' share.post.pk %}">
+                            <i class="bi bi-heart"></i> Like
+                        </a>
+                        <a class="btn btn-outline-secondary btn-sm" href="{% url 'post_detail' share.post.pk %}">
+                            <i class="bi bi-chat"></i> Comment
+                        </a>
+                        <a class="btn btn-outline-success btn-sm" href="{% url 'share_post' share.post.pk %}">
+                            <i class="bi bi-share"></i> Share
+                        </a>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
