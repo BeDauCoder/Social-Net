@@ -174,6 +174,24 @@ def like_post(request, pk):
     return redirect('home')
 
 
+@login_required
+def page_like(request, pk):
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'You must be logged in to like this page.'}, status=403)
+
+    page = get_object_or_404(Page, pk=pk)
+
+    if request.user in page.likes.all():
+        # Nếu người dùng đã like, thực hiện unlike
+        page.likes.remove(request.user)
+        liked = False
+    else:
+        # Nếu người dùng chưa like, thực hiện like
+        page.likes.add(request.user)
+        liked = True
+
+    return JsonResponse({'liked': liked, 'total_likes': page.total_likes()})
+
 from django.shortcuts import redirect
 
 @login_required

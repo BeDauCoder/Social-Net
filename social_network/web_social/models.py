@@ -56,9 +56,13 @@ class Page(models.Model):
     views = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     editors = models.ManyToManyField(User, related_name='editable_pages', blank=True,null=True)
+    likes = models.ManyToManyField(User, related_name='liked_pages', blank=True)
 
     def __str__(self):
         return self.title
+
+    def total_likes(self):
+        return self.likes.count()
 
 
 class Post(models.Model):

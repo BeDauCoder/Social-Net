@@ -62,8 +62,10 @@ urlpatterns = [
     path('pages/', views.page_list_user, name='page_list_user'),  # Đường dẫn cho danh sách trang
     path('pages/<int:pk>/', views.page_detail_user, name='page_detail'),  # Đường dẫn cho chi tiết từng trang
     path('page/<int:page_id>/add-post/', views.PagePostCreateView.as_view(), name='page_post_create'),
+    path('page/<int:pk>/like/', views.page_like, name='page_like'),
     # Sửa bài viết
     path('post/<int:pk>/edit/', views.PostPostUpdateView.as_view(), name='post_edit'),
+
 
     # Xóa bài viết
     path('post/<int:post_id>/delete/', views.PostPostDeleteView, name='post_delete'),
