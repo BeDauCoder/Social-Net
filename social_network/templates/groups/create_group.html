@@ -1,0 +1,99 @@
+{% extends 'base_group.html' %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center min-vh-100 p-5 my-5">
+    <div class="form_group p-4 rounded shadow" style="background-color: #f9f9f9; max-width: 500px; width: 100%;">
+        <h2 class="text-center mb-4" style="color: #8974c8;">
+            {% if edit_mode %} Sửa Nhóm {% else %} Tạo Nhóm Mới {% endif %}
+        </h2>
+
+        <p class="bg-info text-white p-2 rounded text-center">
+            {% if edit_mode %} Chỉnh sửa thông tin nhóm của bạn {% else %} Vui lòng điền thông tin dưới đây để tạo nhóm {% endif %}
+        </p>
+
+        <!-- Hiển thị thông báo lỗi nếu có -->
+        {% if messages %}
+            <div class="alert">
+                {% for message in messages %}
+                    <p style="background-color: hsla(0, 0%, 0%, 0.226); color: red;">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" onsubmit="return validateForm()">
+            {% csrf_token %}
+            
+            <!-- Tên nhóm -->
+            <div class="mb-4">
+                {{ form.name }}  <!-- Tự động hiển thị giá trị trường hiện tại -->
+                {% if form.name.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.name.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Mô tả nhóm -->
+            <div class="mb-4">
+                {{ form.description }}  <!-- Tự động hiển thị giá trị trường hiện tại -->
+                {% if form.description.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.description.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Loại nhóm -->
+            <div class="mb-4">
+                <label for="id_type" class="form-label" style="color: #333;">Loại Nhóm:</label>
+                {{ form.type }}  <!-- Tự động hiển thị trường select -->
+                {% if form.type.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.type.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Nút tạo nhóm -->
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary px-4 py-2"
+                    style="border-radius: 20px; background-color: #8974c8;">
+                    <i class="fa fa-users"></i> {% if edit_mode %} Cập Nhật Nhóm {% else %} Tạo Nhóm {% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+<script>
+    function validateForm() {
+        let valid = true;
+    
+        // Kiểm tra tên nhóm có bị bỏ trống không
+        const groupName = document.querySelector('input[name="name"]');
+        if (!groupName.value.trim()) {
+            groupName.classList.add('is-invalid');
+            valid = false;
+        } else {
+            groupName.classList.remove('is-invalid');
+        }
+    
+        // Kiểm tra mô tả nhóm có bị bỏ trống không
+        const description = document.querySelector('textarea[name="description"]');
+        if (!description.value.trim()) {
+            description.classList.add('is-invalid');
+            valid = false;
+        } else {
+            description.classList.remove('is-invalid');
+        }
+    
+        return valid;
+    }
+</script>

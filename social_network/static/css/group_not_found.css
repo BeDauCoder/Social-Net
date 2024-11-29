@@ -1,0 +1,24 @@
+
+.error-container {
+    text-align: center;
+    color: black;   
+    font-size: 2em;
+    background-color: rgba(211, 205, 205, 0);
+    padding: 20px;
+    margin-top: 450px;
+    border-radius: 10px;
+}
+.error-container p {
+    color:black;
+    text-decoration: none;
+    font-size: 1.5em;
+    margin-top: 20px;
+    display: block;
+}
+.error-container a {
+    color:lightslategray;
+    text-decoration: none;
+    font-size: 1.5em;
+    margin-top: 20px;
+}
+

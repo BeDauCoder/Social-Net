@@ -32,19 +32,42 @@ def create_user_profile(sender, instance, created, **kwargs):
 def save_user_profile(sender, instance, **kwargs):
     instance.userprofile.save()
 
+
 class Group(models.Model):
+    PUBLIC = 'public'
+    PRIVATE = 'private'
+
+    GROUP_TYPE_CHOICES = [
+        (PUBLIC, 'Public'),
+        (PRIVATE, 'Private'),
+    ]
+
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    members = models.ManyToManyField(User, through='GroupMember')
+    cover_image = models.ImageField(upload_to='group_covers/', blank=True, null=True)  # Ảnh bìa của nhóm
+    created_at = models.DateTimeField(auto_now_add=True,blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True,)  # Thời gian cập nhật lần cuối
+    creator = models.ForeignKey(User, on_delete=models.CASCADE,blank=True, null=True)
+    members = models.ManyToManyField(User, through='GroupMember',related_name='member_groups')  # Các thành viên của nhóm
+    type = models.CharField(max_length=7, choices=GROUP_TYPE_CHOICES, default=PUBLIC)  # Công khai hoặc Riêng tư
 
     def __str__(self):
         return self.name
 
+    def member_count(self):
+        return self.members.count()  # Trả về số lượng thành viên của nhóm
+
+    def get_all_images(self):
+        images = []
+        for post in self.posts.all():  # Accessing all posts related to the group
+            images.extend(post.images.all())  # Assuming 'images' is a related manager in 'PostPage'
+        return images
+
+
 class GroupMember(models.Model):
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    joined_at = models.DateTimeField(auto_now_add=True)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE,blank=True, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE,blank=True, null=True)
+    joined_at = models.DateTimeField(auto_now_add=True,blank=True, null=True)
 
 
 class Page(models.Model):
@@ -76,7 +99,7 @@ class Post(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True, blank=True)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True, blank=True,related_name='posts')
     privacy = models.CharField(max_length=10, choices=PRIVACY_CHOICES, default='public')
     likes = models.ManyToManyField(User, related_name='liked_posts', blank=True)
 
@@ -193,6 +216,11 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.sender.username} -> {self.receiver.username}: {self.content[:20]}"
+
+class MembershipRequest(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    requested_at = models.DateTimeField(auto_now_add=True)
 
 
 

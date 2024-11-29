@@ -3,11 +3,11 @@ from audioop import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.models import User
-from .forms import PostForm,CommentForm,UserForm,UserProfileForm,PostWallForm
+from .forms import PostForm,CommentForm,UserForm,UserProfileForm,PostWallForm,GroupForm
 from .models import Post, Like, Comment,Friend
 from django.db import models
 from django.contrib.auth.decorators import login_required
-from .models import UserProfile,Share
+from .models import UserProfile,Share,MembershipRequest
 from django.shortcuts import redirect, get_object_or_404, render
 from django.views.decorators.http import require_POST
 from rest_framework import viewsets, status
@@ -19,11 +19,11 @@ from rest_framework import viewsets
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from .models import Page
+from .models import Page,GroupMember,Group
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import timedelta
-
+from django.db.models import Count
 
 def register(request):
     if request.method == 'POST':
@@ -906,6 +906,233 @@ def search_view(request):
         'friends': friends,
     }
     return render(request, 'search_results.html', context)
+
+
+
+# Hiển thị danh sách nhóm
+@login_required
+def list_group(request):
+    # Lấy tất cả các nhóm mà người dùng là thành viên (Your Groups)
+    user_groups = GroupMember.objects.filter(user=request.user).select_related('group')
+
+    # Lấy danh sách bạn bè của người dùng (cần tùy chỉnh theo cách lưu quan hệ bạn bè trong mô hình của bạn)
+    user_friends = User.objects.filter(
+        Q(friend_user__friend=request.user, friend_user__status='accepted') |
+        Q(friend_friend__user=request.user, friend_friend__status='accepted'))  # Giả sử có mối quan hệ bạn bè
+
+    # Lấy các nhóm mà bạn bè của người dùng là thành viên (Friends Groups)
+
+    friends_groups = GroupMember.objects.filter(user__in=user_friends).exclude(
+        group__members=request.user).select_related('group')
+
+    # Gợi ý các nhóm cho người dùng (Suggested for you) - các nhóm mà user chưa tham gia
+    suggested_groups = Group.objects.exclude(members=request.user)[:5]  # Giới hạn kết quả nếu cần
+
+    # Nhóm phổ biến (Popular near you) - lấy các nhóm có nhiều thành viên nhất
+    popular_groups = Group.objects.annotate(member_count=Count('members')).order_by('-member_count')[:5]
+
+    # Truyền tất cả các nhóm vào template
+    context = {
+        'user_groups': user_groups,
+        'friends_groups': friends_groups,
+        'suggested_groups': suggested_groups,
+        'popular_groups': popular_groups,
+    }
+    return render(request, 'groups/list_group.html', context)
+
+
+@login_required
+def leave_group(request, group_id):
+    group = get_object_or_404(Group, id=group_id)
+
+    # Kiểm tra nếu người dùng là thành viên của nhóm
+    membership = GroupMember.objects.filter(group=group, user=request.user).first()
+    if membership:
+        membership.delete()  # Xóa thành viên khỏi nhóm
+        messages.success(request, "Bạn đã rời nhóm thành công.")
+    else:
+        messages.error(request, "Bạn không phải là thành viên của nhóm này.")
+
+    return redirect('group_detail', group_id=group.id)
+
+
+from .forms import GroupCoverImageForm
+
+
+@login_required
+def update_cover_image(request, group_id):
+    group = get_object_or_404(Group, id=group_id)
+
+    # Kiểm tra nếu người dùng là người tạo nhóm
+    if request.user != group.creator:
+        return redirect('group_detail', group_id=group.id)
+
+    if request.method == 'POST':
+        form = GroupCoverImageForm(request.POST, request.FILES, instance=group)
+        if form.is_valid():
+            form.save()
+            return redirect('group_detail', group_id=group.id)
+    else:
+        form = GroupCoverImageForm(instance=group)
+
+    return render(request, 'groups/update_cover_image.html', {'form': form, 'group': group})
+
+
+@login_required
+def join_group(request, group_id):
+    group = get_object_or_404(Group, id=group_id)
+    if MembershipRequest.objects.filter(user=request.user, group=group).exists():
+        messages.info(request, "Bạn đã gửi yêu cầu tham gia nhóm này.")
+    else:
+        MembershipRequest.objects.create(user=request.user, group=group)
+        messages.success(request, "Yêu cầu tham gia của bạn đã được gửi đến admin.")
+    return redirect('group_detail', group_id=group.id)
+
+
+from django.contrib.sites.shortcuts import get_current_site
+
+
+@login_required
+def share_group(request, group_id):
+    group = get_object_or_404(Group, id=group_id)
+
+    # Generate a shareable URL
+    current_site = get_current_site(request)
+    shareable_url = f"http://{current_site.domain}{reverse('group_detail', args=[group_id])}"
+
+    # Return the shareable link as JSON or render a template
+    return JsonResponse({"shareable_url": shareable_url})
+
+
+@login_required
+def edit_group(request, group_id):
+    # Lấy thông tin nhóm từ group_id
+    group = get_object_or_404(Group, id=group_id)
+
+    # Kiểm tra xem người dùng có phải là người tạo nhóm không
+    if request.user != group.creator:
+        messages.error(request, "Bạn không có quyền chỉnh sửa nhóm này.")
+        return redirect('group_detail', group_id=group.id)
+
+    # Nếu người dùng gửi form (method = POST)
+    if request.method == 'POST':
+        form = GroupForm(request.POST, request.FILES, instance=group)
+        if form.is_valid():
+            # Cập nhật nhóm với thông tin mới
+            form.save()
+            messages.success(request, "Nhóm đã được cập nhật thành công.")
+            return redirect('group_detail', group_id=group.id)
+    else:
+        # Nếu là GET, hiển thị form với thông tin nhóm hiện tại
+        form = GroupForm(instance=group)
+
+    # Render trang chỉnh sửa nhóm
+    return render(request, 'groups/create_group.html', {'form': form, 'edit_mode': True})
+
+
+def remove_member(request, group_id, user_id):
+    group = get_object_or_404(Group, id=group_id)
+    user = get_object_or_404(User, id=user_id)
+
+    # Kiểm tra nếu người dùng là người tạo nhóm
+    if request.user == group.creator:
+        group.members.remove(user)  # Loại bỏ người dùng khỏi nhóm
+        group.save()
+
+    return redirect('group_detail', group_id=group.id)
+
+
+# Views để tạo nhóm
+@login_required
+def create_group(request):
+    if request.method == 'POST':
+        form = GroupForm(request.POST)
+        if form.is_valid():
+            group_name = form.cleaned_data['name']
+
+            # Kiểm tra nếu tên nhóm đã tồn tại
+            if Group.objects.filter(name=group_name).exists():
+                messages.error(request, "Tên nhóm đã tồn tại. Vui lòng chọn tên khác.")
+                return render(request, 'groups/create_group.html', {'form': form})
+
+            # Tạo nhóm mới nếu tên nhóm chưa tồn tại
+            group = form.save(commit=False)
+            group.creator = request.user
+            group.save()
+            GroupMember.objects.create(group=group, user=request.user)
+            messages.success(request, "Nhóm đã được tạo thành công.")
+            return redirect('group_detail', group_id=group.id)
+        else:
+            messages.error(request, "Có lỗi xảy ra khi tạo nhóm. Vui lòng kiểm tra lại các thông tin.")
+    else:
+        form = GroupForm()
+
+    return render(request, 'groups/create_group.html', {'form': form})
+
+
+from django.views.decorators.csrf import csrf_exempt
+
+
+@login_required
+@csrf_exempt  # Optional if needed
+def delete_group(request, group_id):
+    group = get_object_or_404(Group, id=group_id)
+
+    if request.user == group.creator:
+        if request.method == 'POST':
+            group.delete()
+            messages.success(request, "Group deleted successfully.")
+            return redirect('list_group')
+        else:
+            messages.error(request, "Invalid request method.")
+            return JsonResponse({"error": "Method not allowed."}, status=405)
+
+    messages.error(request, "You are not authorized to delete this group.")
+    return JsonResponse({"error": "You are not authorized to delete this group."}, status=403)
+
+
+from django.urls import reverse
+from django.shortcuts import render
+from .models import Group, Post
+from django.contrib.auth.decorators import login_required
+
+
+@login_required
+def group_detail(request, group_id):
+    # Lấy nhóm hoặc trả về lỗi 404 nếu không tồn tại
+    group = get_object_or_404(Group, id=group_id)
+
+    # Kiểm tra quyền admin hoặc creator
+    is_admin_or_creator = request.user == group.creator or request.user.is_staff
+
+    # Lấy danh sách thành viên và bài viết
+    group_members = group.members.all()
+    posts = group.posts.all()
+
+    # Xử lý ảnh bìa nếu có
+    if request.method == 'POST' and 'cover_image' in request.FILES:
+        if is_admin_or_creator:
+            group.cover_image = request.FILES['cover_image']
+            group.save()
+            messages.success(request, "Ảnh bìa đã được cập nhật.")
+            return redirect('group_detail', group_id=group.id)
+
+    # Lấy danh sách yêu cầu tham gia nhóm
+    # membership_requests = MembershipRequest.objects.filter(group=group)
+
+    # URL cập nhật nhóm
+    update_group_url = reverse('edit_group', args=[group.id])
+
+    # Trả về template
+    return render(request, 'groups/group_detail.html', {
+        'group': group,
+        'posts': posts,
+        'group_members': group_members,
+        # 'membership_requests': membership_requests,
+        'update_group_url': update_group_url,
+        'is_admin_or_creator': is_admin_or_creator,
+    })
+
 
 
 

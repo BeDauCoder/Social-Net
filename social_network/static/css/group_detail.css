@@ -1,0 +1,95 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f2f5;
+    margin: 0;
+}
+
+.group-header {
+    display: flex;
+    align-items: start;
+    justify-content: start;
+    flex-direction: column;
+    background-color: #fff;
+    border-bottom: 1px solid #ccc;
+    padding: 20px;
+}
+.group-header .group-info {
+    display: flex;
+    flex-direction: row; /* Sắp xếp các phần tử theo chiều ngang */
+    align-items: center; /* Căn giữa các phần tử theo chiều dọc */
+    gap: 10px; /* Thêm khoảng cách giữa các phần tử */
+}
+
+.group-header .group-info i {
+    font-size: 1.5rem; /* Điều chỉnh kích thước của icon */
+}
+
+.group-header .group-info p {
+    font-size: large; /* Kích thước chữ cho đoạn văn */
+    margin: 0; /* Loại bỏ khoảng cách mặc định quanh các phần tử p */
+}
+
+.group-header p{
+color: black;
+}
+
+.cover-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+
+.group-info h1 {
+    margin: 10px 0;
+}
+
+.content-wrapper {
+    display: flex;
+    margin: 20px auto;
+    max-width: 1200px;
+}
+
+.left-sidebar, .right-sidebar {
+    width: 25%;
+    padding: 20px;
+}
+
+.main-content {
+    width: 50%;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+}
+
+.post-form textarea {
+    width: 100%;
+    border-radius: 8px;
+    padding: 10px;
+    border: 1px solid #ccc;
+}
+
+.post {
+    border-bottom: 1px solid #eee;
+    padding: 15px 0;
+}
+
+.post-header {
+    display: flex;
+    align-items: center;
+}
+
+.profile-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.post-user-info h3 {
+    margin: 0;
+}
+
+.post-content p {
+    margin: 10px 0 0;
+}

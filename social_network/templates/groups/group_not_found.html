@@ -1,0 +1,24 @@
+{% extends 'base_group.html' %}
+{% load static %}
+
+{% block content %}
+<head>
+    <style>
+        body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-image: url("{% static 'images/404_not_found.gif' %}");
+    background-size: cover;
+}
+    </style>
+</head>
+<!-- group_not_found.html -->
+<!-- <div class="error-container"> -->
+    <p>Sorry, the page you are looking for does not exist.</p>
+    <a href="{% url 'home' %}">Go Back to Home</a>
+<!-- </div> -->
+{% endblock %}

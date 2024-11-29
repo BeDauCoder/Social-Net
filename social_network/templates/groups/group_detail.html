@@ -1,0 +1,105 @@
+{% extends 'base_group.html' %}
+{% load static %}
+
+{% block content %}
+<header>
+    <div class="group-header">
+        <!-- Hiển thị ảnh bìa của nhóm -->
+        {% if group.cover_image %}
+            <img src="{{ group.cover_image.url }}" alt="{{ group.name }} Cover" class="cover-image" style="width: 100%; height: 400px; object-fit: cover;">
+        {% else %}
+            <img src="{% static 'images/default-cover.jpg' %}" alt="Default Cover" class="cover-image" style="width: 100%; height: 400px; object-fit: cover;">
+        {% endif %}
+
+        <!-- tên nhóm và btn cho thay đổi  ảnh bìa -->
+        <div class="container mt-4">
+            <div class="row align-items-center">
+                <!-- Tên nhóm -->
+                <div class="col-md-8">
+                    <h1 class="display-4">{{ group.name }}</h1>
+                </div>
+        
+                <!-- Nút thay đổi ảnh bìa (chỉ dành cho creator) -->
+                {% if request.user == group.creator %}
+                <div class="col-md-4 text-md-end">
+                    <a href="{% url 'update_cover_image' group.id %}" class="btn btn-warning">
+                        <i class="fa-solid fa-image" style="color: #4f6c82;"></i>
+                    </a></a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+       
+        <!-- Thông tin nhóm -->
+        <div class="group-info">
+            {% if group.get_type_display == "Public" %}
+                <i class="fa-solid fa-earth-americas" style="color: #402593;"></i>
+            {% else %}
+                <i class="fa-solid fa-lock" style="color: #0a3b61;"></i>
+            {% endif %}
+            <p style="font-size: large;">{{ group.get_type_display }}</p>
+            <p>{{ group.member_count }} thành viên.</p>
+        </div>
+
+        <!-- Kiểm tra nếu người dùng không phải là người tạo nhóm -->
+        {% if request.user != group.creator %}
+            {% if user_in_group %}
+                <!-- Hiển thị nút 'Rời nhóm' nếu người dùng đã là thành viên -->
+                <form id="leaveGroupForm" method="POST" action="{% url 'leave_group' group.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="group_id" value="{{ group.id }}">
+                    <button type="submit" class="btn btn-danger" id="leaveGroupBtn">Rời nhóm</button>
+                </form>
+            {% else %}
+                <!-- Hiển thị nút 'Tham gia nhóm' nếu người dùng chưa là thành viên -->
+                <form id="joinGroupForm" method="POST" action="{% url 'join_group' group.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="group_id" value="{{ group.id }}">
+                    <button type="submit" class="btn btn-primary" id="joinGroupBtn">Tham gia nhóm</button>
+                </form>
+            {% endif %}
+        {% else %}
+        
+            <div class="btn-group d-flex justify-content-between">
+                <button class="btn btn-primary mx-2" type="button" id="shareGroupBtn">Chia sẻ nhóm</button>
+                <a href="{{ update_group_url }}" class="btn btn-info mx-2">Cập nhật nhóm</a> <!-- Sử dụng URL chỉnh sửa nhóm -->
+                <form id="deleteGroupForm" method="POST" action="{% url 'delete_group' group.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn-danger mx-2" type="submit" id="deleteGroupBtn">Xóa nhóm</button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+</header>
+<div class="group-members mt-4">
+    <h2>Danh sách thành viên</h2>
+    <ul class="list-group">
+        {% for member in group_members %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ member.username }}</strong>
+                    {% if member == group.creator %}
+                        <span class="badge bg-primary">Người tạo nhóm</span>
+                    {% endif %}
+                </div>
+                <!-- Hiển thị thêm nút nếu cần -->
+                <!-- {% if request.user == group.creator and member != group.creator %}
+                    <form method="POST" action="{% url 'remove_member' group.id member.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-danger">Xóa</button>
+                    </form>
+                {% endif %} -->
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<div class="group-posts">
+    {% for post in posts %}
+        <div class="post">
+            <p><strong>{{ post.author.username }}</strong> - {{ post.created_at }}</p>
+            <p>{{ post.content|slice:":20" }}{% if post.content|length > 20 %}...{% endif %}</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

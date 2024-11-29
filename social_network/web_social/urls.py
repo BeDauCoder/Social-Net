@@ -11,8 +11,6 @@ from .consumers import ChatConsumer
 router = DefaultRouter()
 router.register(r'comments', CommentViewSet)
 
-
-
 urlpatterns = [
     # User-related URLs
     path("register/", views.register, name='register'),
@@ -26,7 +24,6 @@ urlpatterns = [
     path('home/like/<int:pk>/', views.like_post, name='like_post'),
     path('post/<int:pk>/', views.post_detail, name='post_detail'),
     path('post/<int:pk>/add_comment/', views.add_comment, name='add_comment'),  # Add comment URL
-
 
     # Profile-related URLs
     path('profile/<int:user_id>/', views.profile, name='profile'),
@@ -49,15 +46,15 @@ urlpatterns = [
     path('send_friend_request/<int:user_id>/', views.send_friend_request, name='send_friend_request'),
     path('list_friends/<int:user_id>/', views.list_friends, name='list_friends'),
 
-
     # Include the API router for ViewSets
     path('', include(router.urls)),
     path('chat/<int:user_id>/', views.chat_view, name='chat'),
     path('edit-message/<int:message_id>/', views.edit_message_view, name='edit_message'),
-    path('recall-message-for-everyone/<int:message_id>/', views.recall_message_for_everyone, name='recall_message_for_everyone'),
+    path('recall-message-for-everyone/<int:message_id>/', views.recall_message_for_everyone,
+         name='recall_message_for_everyone'),
     path('recall-message-for-self/<int:message_id>/', views.recall_message_for_self, name='recall_message_for_self'),
 
-    #manager page
+    # manager page
     path('page_manager/', views.PageListView.as_view(), name='page_list'),
     path('page_manager/new/', views.PageCreateView.as_view(), name='page_create'),
     path('page_manager/<int:pk>/edit/', views.PageUpdateView.as_view(), name='page_edit'),
@@ -69,13 +66,11 @@ urlpatterns = [
     # Sửa bài viết
     path('post/<int:pk>/edit/', views.PostPostUpdateView.as_view(), name='post_edit'),
 
-
     # Xóa bài viết
     path('post/<int:post_id>/delete/', views.PostPostDeleteView, name='post_delete'),
     path('manage-editors/<int:page_id>/', views.manage_editors, name='manage_editors'),
 
-
-    #manager post
+    # manager post
     path('my_posts/', views.UserPostListView.as_view(), name='user_post_list'),
     path('my_posts/new/', views.PostCreateView.as_view(), name='post_create'),
     path('my_posts/<int:pk>/edit/', views.PostUpdateView.as_view(), name='post_edit'),
@@ -86,6 +81,17 @@ urlpatterns = [
     path('tag/remove/<int:tag_id>/', views.remove_tag, name='remove_tag'),
 
     path('search/', views.search_view, name='search_view'),
+    path('groups/', include([
+
+        path('create/', views.create_group, name='create_group'),
+        path('<int:group_id>/', views.group_detail, name='group_detail'),
+        path('<int:group_id>/update_cover/', views.update_cover_image, name='update_cover_image'),
+        path('<int:group_id>/join/', views.join_group, name='join_group'),
+        path('<int:group_id>/leave/', views.leave_group, name='leave_group'),
+        path('<int:group_id>/delete/', views.delete_group, name='delete_group'),
+        path('<int:group_id>/edit/', views.edit_group, name='edit_group'),  # URL edit_group
+        path('', views.list_group, name='list_group'),
+    ])),
 
 ]
 

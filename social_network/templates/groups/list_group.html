@@ -1,0 +1,106 @@
+{% extends 'base_group.html' %}
+
+{% block content %}
+    <!-- Define URLs for JavaScript -->
+    <div class="tab_box">
+        <a href="{% url 'create_group' %}" class="btn btn-info btn_addGroup">
+            <i class="fa-sharp fa-solid fa-plus" style="color: #8974c8;"></i> New Group
+        </a>
+
+        <button class="tab_btn active">Your Groups</button>
+        <button class="tab_btn">Friends Groups</button>
+        <button class="tab_btn">Suggested for you</button>
+        <button class="tab_btn">Popular near you</button>
+    </div>
+
+    <div class="content_box">
+        <div class="content active">
+            <h2>Your Groups</h2>
+            <ul>
+                {% for membership in user_groups %}
+                <li>
+                    <a href="{% url 'group_detail' membership.group.id %}">{{ membership.group.name }}</a>
+                </li>
+                {% empty %}
+                <p>You are not a member of any groups.</p>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="content">
+            <h2>Friends Groups</h2>
+            <ul>
+                {% for membership in friends_groups %}
+                <li>
+                    <a href="{% url 'group_detail' membership.group.id %}">{{ membership.group.name }}</a>
+                    <p>{{ membership.group.description }}</p>
+                </li>
+                {% empty %}
+                <p>Your friends have not joined any groups.</p>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="content">
+            <h2>Suggested for you</h2>
+            <ul>
+                {% for group in suggested_groups %}
+                <li>
+                    <a href="{% url 'group_detail' group.id %}">{{ group.name }}</a>
+                    <p>{{ group.description }}</p>
+                </li>
+                {% empty %}
+                <p>No group suggestions available at this time.</p>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="content">
+            <h2>Popular near you</h2>
+            <ul>
+                {% for group in popular_groups %}
+                <li>
+                    <a href="{% url 'group_detail' group.id %}">{{ group.name }}</a>
+                    <p>{{ group.description }}</p>
+                </li>
+                {% empty %}
+                <p>No popular groups available.</p>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+{% endblock %}
+
+  <!-- <div class="row mx-auto my-auto justify-content-start bg-secondary mb-3">
+
+                <div id="imageCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="1900">
+                    <div class="carousel-inner" role="listbox">
+                        {% for item in weather_forecasts %}
+        
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                            <div class="col-md-3 py-5 px-2">
+                                <div class="card border border-5 border-warning rounded-4" style="height: 220px; width: 300px; background: lightblue;">
+                                    <div class="card-img pt-5">
+                                        <img src="https://openweathermap.org/img/wn/{{ item.forecast.weather.0.icon }}@2x.png"
+                                             class="img-fluid" alt="Weather Icon">
+                                    </div>
+                                    <div class="card-img-overlay">
+                                        <h4>{{ item.forecast.dt_txt|date:"Y-m-d hA" }} <br>({{ item.city }})</h4>
+        
+                                        <p class="pt-5"><span>Nhiệt độ: </span><mark>{{ item.forecast.main.temp }}°C</mark></p>
+                                        <p class="position-absolute" style="margin-top: 15px; left: 20px; color: darkblue;">Thời tiết: {{ item.forecast.weather.0.description }}</p>
+                                    </div>
+                                </div>
+                            </div>
+        
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <a class="carousel-control-prev bg-transparent w-aut" href="#imageCarousel" role="button" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    </a>
+                    <a class="carousel-control-next bg-transparent w-aut" href="#imageCarousel" role="button" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    </a>
+                </div>
+            </div> -->
