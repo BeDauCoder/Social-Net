@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     "web_social",
     "django_summernote",
     "rest_framework",
-    "channels",
     "social_network"
 ]
 
