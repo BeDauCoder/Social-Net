@@ -53,6 +53,9 @@ urlpatterns = [
     # Include the API router for ViewSets
     path('', include(router.urls)),
     path('chat/<int:user_id>/', views.chat_view, name='chat'),
+    path('edit-message/<int:message_id>/', views.edit_message_view, name='edit_message'),
+    path('recall-message-for-everyone/<int:message_id>/', views.recall_message_for_everyone, name='recall_message_for_everyone'),
+    path('recall-message-for-self/<int:message_id>/', views.recall_message_for_self, name='recall_message_for_self'),
 
     #manager page
     path('page_manager/', views.PageListView.as_view(), name='page_list'),

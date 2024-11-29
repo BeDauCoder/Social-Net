@@ -433,30 +433,65 @@ from django.contrib.auth.models import User
 
 @login_required
 def chat_view(request, user_id):
-    # Người bạn đang chat
     other_user = get_object_or_404(User, id=user_id)
 
-    # Lấy tin nhắn giữa hai người
+    # Lọc tin nhắn (bỏ qua tin nhắn thu hồi chỉ với người gửi)
     messages = Message.objects.filter(
         (models.Q(sender=request.user, receiver=other_user) |
-         models.Q(sender=other_user, receiver=request.user))
+         models.Q(sender=other_user, receiver=request.user)) &
+        ~models.Q(is_recalled_by_sender=True, sender=request.user)  # Loại bỏ tin nhắn thu hồi chỉ với người gửi
     ).order_by('timestamp')
 
-    # Đánh dấu các tin nhắn gửi đến người dùng hiện tại là "Đã đọc"
+    # Đánh dấu các tin nhắn của other_user là "Đã đọc"
     messages.filter(receiver=request.user, is_read=False).update(is_read=True)
 
-    # Nếu gửi tin nhắn
     if request.method == "POST":
         content = request.POST.get('content')
         if content:
             Message.objects.create(sender=request.user, receiver=other_user, content=content)
         return redirect('chat', user_id=other_user.id)
 
-    return render(request, 'chat.html', {'messages': messages, 'other_user': other_user})
+    return render(request, 'chat.html', {
+        'messages': messages,
+        'other_user': other_user,
+    })
 
 
 
 
+
+@login_required
+def edit_message_view(request, message_id):
+    """Xử lý việc sửa tin nhắn."""
+    if request.method == "POST":
+        message = get_object_or_404(Message, id=message_id, sender=request.user)
+        new_content = request.POST.get('content')
+        if new_content:
+            message.content = new_content
+            message.save()
+            return JsonResponse({'status': 'success', 'new_content': new_content})
+        return JsonResponse({'status': 'error', 'message': 'Content cannot be empty'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'})
+
+@login_required
+def recall_message_for_everyone(request, message_id):
+    """Thu hồi tin nhắn với mọi người."""
+    if request.method == "POST":
+        # Kiểm tra quyền sở hữu tin nhắn
+        message = get_object_or_404(Message, id=message_id, sender=request.user)
+        # Cập nhật trạng thái thu hồi
+        message.is_recalled = True
+        message.content = "[Tin nhắn đã bị thu hồi]"
+        message.save()
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'})
+
+@login_required
+def recall_message_for_self(request, message_id):
+    message = get_object_or_404(Message, id=message_id, sender=request.user)
+    message.is_recalled_by_sender = True
+    message.save()
+    return JsonResponse({'status': 'success'})
 
 
 class PageListView(LoginRequiredMixin, ListView):

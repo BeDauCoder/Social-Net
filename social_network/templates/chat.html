@@ -8,15 +8,47 @@
         {% for message in messages %}
         <div class="message {% if message.sender == request.user %}text-end{% else %}text-start{% endif %} mb-2">
             <div class="d-inline-block p-2 rounded {% if message.sender == request.user %}bg-primary text-white{% else %}bg-secondary text-white{% endif %}">
-                <p class="mb-1"><strong>{{ message.sender.username }}</strong>: {{ message.content }}</p>
+                {% if message.is_recalled %}
+                <p class="text-muted"><i>[Tin nhắn đã bị thu hồi]</i></p>
+                {% else %}
+                <p class="mb-1">
+                    <strong>{{ message.sender.username }}</strong>:
+                    <span id="message-content-{{ message.id }}">{{ message.content }}</span>
+                </p>
+                {% endif %}
                 <small>{{ message.timestamp|date:"H:i:s, d M Y" }}</small>
-                <!-- Hiển thị trạng thái "Đã đọc" cho tin nhắn gửi đi -->
-                {% if message.sender == request.user and message.is_read %}
-                <span class="text-muted">Đã đọc</span>
+
+                {% if message.sender == request.user and not message.is_recalled %}
+                <!-- Menu ba chấm -->
+                <div class="dropdown d-inline-block">
+                    <button class="btn btn-sm btn-link text-white" data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <button class="dropdown-item" onclick="editMessage({{ message.id }})">Sửa</button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="recallMessageForEveryone({{ message.id }})">Thu hồi
+                                với mọi người
+                            </button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" onclick="recallMessageForSelf({{ message.id }})">Thu hồi chỉ
+                                với tôi
+                            </button>
+                        </li>
+                    </ul>
+                </div>
                 {% endif %}
             </div>
+            <!-- Hiển thị trạng thái đã đọc -->
+            {% if message.sender == request.user and message.is_read %}
+            <div class="text-muted small">Đã đọc</div>
+            {% endif %}
         </div>
         {% endfor %}
+
     </div>
 
     <form method="POST" class="d-flex">
@@ -25,4 +57,70 @@
         <button type="submit" class="btn btn-primary">Send</button>
     </form>
 </div>
+<script>
+    function editMessage(messageId) {
+        const contentSpan = document.getElementById(`message-content-${messageId}`);
+        const oldContent = contentSpan.textContent;
+
+        const newContent = prompt("Nhập nội dung mới:", oldContent);
+        if (newContent !== null) {
+            fetch(`/edit-message/${messageId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `content=${encodeURIComponent(newContent)}`,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        contentSpan.textContent = data.new_content;
+                    } else {
+                        alert(data.message);
+                    }
+                });
+        }
+    }
+
+    function recallMessageForEveryone(messageId) {
+        if (confirm("Bạn có chắc muốn thu hồi tin nhắn này cho mọi người?")) {
+            fetch(`/recall-message-for-everyone/${messageId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                });
+        }
+    }
+
+    function recallMessageForSelf(messageId) {
+        if (confirm("Bạn có chắc muốn thu hồi tin nhắn này chỉ với bạn?")) {
+            fetch(`/recall-message-for-self/${messageId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                });
+        }
+    }
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
 {% endblock %}
