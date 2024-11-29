@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header text-center bg-primary text-white">
+                    <h1 class="h4">{% if form.instance.pk %}Sửa{% else %}Tạo{% endif %} Page</h1>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            {{ form.title.label_tag }}
+                            {{ form.title }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.content_html.label_tag }}
+                            {{ form.content_html }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.cover_image.label_tag }}
+                            {{ form.cover_image }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.avatar_image.label_tag }}
+                            {{ form.avatar_image }}
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">{% if form.instance.pk %}Lưu{% else %}Tạo mới{% endif %}</button>
+                            <a href="{% url 'page_list' %}" class="btn btn-secondary">Quay lại danh sách</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
